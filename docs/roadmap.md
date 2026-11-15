@@ -1,4 +1,9 @@
-# Parallel VisionLab roadmap
+# VisionPro Lab delivery roadmap
+
+Proposed product name: **VisionPro Lab**. The repository, Java package names, and
+current window still use Parallel VisionLab; branding changes are a separate
+implementation task. Target: a polished Windows desktop PDC application for a
+three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
 
@@ -15,22 +20,86 @@ The next implementation milestone is Phase 3: sequential grayscale.
 | --- | --- | --- | --- |
 | 1. Foundation | Done | Java 21 modular Maven app, JavaFX window, environment inventory, Git repository | Build passes and real window opens |
 | 2. Image workspace | Implemented | File picker, asynchronous decoding, proportional preview, dimensions, clear, error messages | Three decoder tests pass; complete README manual UI walkthrough |
-| 3. Sequential grayscale | Next | Backend-neutral pixel model, processing interface, sequential engine, grayscale action, original/output preview, save output | Known-color/alpha tests, original remains unchanged, exported image matches result |
-| 4. Sequential filters | Planned | Generic convolution, Gaussian blur, Sobel magnitude, parameter validation | Known small matrices, constant images, borders, narrow images, alpha cases |
-| 5. ExecutorService backend | Planned | Configurable worker count, independent row/tile partitions, reusable managed executor, UI backend selection | Exact agreement with sequential results; 1 worker, excess workers, odd dimensions, shutdown |
-| 6. Fork/Join backend | Planned | Recursive row/tile tasks, configurable parallelism, measured split threshold | Agreement with sequential results; threshold boundaries and pool cleanup |
-| 7. CPU benchmarking | Planned | Warmups, repeated measurements, baseline, timing scope, speedup/efficiency/throughput, correctness gate | Metric formulas tested; invalid output excluded; reproducible run metadata |
-| 8. CUDA toolchain and bridge | Planned | Verified Toolkit/MSVC/CMake combination, standalone native executable, versioned file protocol, Java process bridge | Native build and identity round trip; timeout, failure, missing executable, cleanup |
-| 9. Basic CUDA kernels | Planned | Custom grayscale, convolution/Gaussian and Sobel kernels, explicit transfers, CUDA error handling | Compare against CPU on reference fixtures and odd/non-block-aligned sizes |
-| 10. Shared-memory CUDA convolution | Planned | Cooperative tile/halo loading, shared-memory convolution, selectable basic/optimized variants | Same output contract as basic kernel; boundary cases, hardware resource checks, measured comparison |
-| 11. Performance dashboard | Planned | CPU/GPU comparison charts, result table, CSV export, parameter/image metadata | Export round trip, chart/table agreement, repeated-run variability and timing labels |
-| 12. Integration and release | Planned | UI cancellation/progress, packaging, CI, team documentation, report, demo assets | Clean-machine build, full correctness suite, native/GPU checks on RTX 4050, reproducible demo |
+| 3. Pixel and engine contracts | Next | Immutable pixel model, filter request/result types, dimension/channel/alpha rules | Input validation and ownership tests |
+| 4. Sequential grayscale | Planned | CPU reference implementation and known-color fixtures | Exact expected pixels, alpha preservation, input unchanged |
+| 5. Processing workspace | Planned | Original/result panes, filter selection, background processing, save PNG | Process/load/reset transitions; export round trip |
+| 6. Convolution core | Planned | Kernel validation, documented orientation and border mode | Hand-calculated matrices; narrow/odd images |
+| 7. Gaussian blur | Planned | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, reference outputs |
+| 8. Sobel edges | Planned | Gradient and magnitude rules, clamping | Flat images, known edges, border cases |
+| 9. CI and team integration | Planned | Java build/test workflow, fixtures, PR checklist | Clean clone builds in CI; CUDA suite separate |
+| 10. ExecutorService engine | Planned | Row/tile partitions, thread configuration, managed pool | Reference agreement; excess workers and pool cleanup |
+| 11. Fork/Join engine | Planned | Recursive tasks, split threshold, parallelism controls | Reference agreement; threshold boundaries |
+| 12. Validation service | Planned | Exact/tolerant comparisons, maximum/mean error, mismatch count | Deliberate mismatches detected; tolerance fixed in advance |
+| 13. Benchmark runner | Planned | Warmups, repetitions, timing scopes, cancellation, run metadata | Stable lifecycle; invalid outputs excluded |
+| 14. Metrics and CPU comparison | Planned | Median/spread, speedup, CPU efficiency, throughput | Formula tests and comparable baseline scopes |
+| 15. CUDA toolchain | Planned | Compatible Toolkit/MSVC/CMake, device detection, native executable | Build and device smoke check on RTX 4050 |
+| 16. Java/native bridge | Planned | Versioned protocol, process invocation, timeout, failure handling | Identity round trip, malformed output, missing executable, cleanup |
+| 17. Basic CUDA filters | Planned | Custom grayscale, convolution/Gaussian, Sobel kernels | Reference comparison including partial blocks |
+| 18. Shared-memory convolution | Planned | Cooperative tiles/halos, basic/optimized selector | Output agreement, resource checks, measured comparison |
+| 19. GPU measurement | Planned | Kernel events, transfer and total bridge timings | Synchronization and timing scopes verified |
+| 20. Performance dashboard | Planned | Charts, sortable results, run configuration and validation badges | Table/chart agreement; empty/error states |
+| 21. Results export | Planned | CSV with metadata, units and scope; saved output images | CSV escaping and exported values tested |
+| 22. Professional UX | Planned | Consistent branding/theme, keyboard actions, zoom/fit, progress/cancel, diagnostics, memory limits | Responsive workflows, accessible focus/contrast, actionable errors |
+| 23. Windows distribution | Planned | Runtime bundle/installer, native executable discovery, setup guide | Runs on clean Windows without development JDK; CPU mode works without CUDA |
+| 24. Final validation and submission | Planned | Reproducible experiments, screenshots, architecture/report, presentation, demo script | Full suite and demo rehearsal; limitations documented |
 
-Each phase is delivered and checked before the next. CI for Java builds should be
-added early when the team starts parallel work; release packaging stays in Phase 12.
-CUDA installation may happen earlier, but GPU implementation depends on the CPU
-output contract. CUDA support for the installed Visual Studio 2026 host compiler
-must be verified; install a supported compiler if necessary.
+Phase numbers describe deliverables, not 24 serial work blocks. Each deliverable
+must pass its checks before dependent work integrates. CI and CUDA environment
+verification can start alongside Phases 3-5. Native kernels depend on the agreed
+CPU contract; charts depend on real measured results.
+
+## Four-week delivery with a fifth-week buffer
+
+Planning starts Monday, November 16, 2026. Four-week delivery is December 13;
+the optional fifth week ends December 20. These are planning targets, not a
+confirmed course submission deadline. Reassess scope at every weekly review.
+
+| Week | Dates | UI/integration owner A | CPU/validation owner B | CUDA owner C | Weekly acceptance gate |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Nov 16-22 | Phases 5, 9; manual Phase 2 check | Phases 3, 4, 6-8 | Phase 15; agree Phase 16 protocol | All sequential filters usable; CI green; CUDA compiler/device verified |
+| 2 | Nov 23-29 | Backend controls; Phase 20 layout | Phases 10-14 | Phases 16-17 | Three CPU backends validated; first CUDA results match reference |
+| 3 | Nov 30-Dec 6 | Phases 20-21; start 22 | Complete benchmark/validation integration | Phases 18-19 | Four backends measured; shared-memory comparison; charts and CSV work |
+| 4 | Dec 7-13 | Phases 22-23 | Regression, experiments and report | Native packaging, GPU experiments | Phase 24 release candidate; clean-machine test and demo rehearsal |
+| 5 | Dec 14-20 | Usability fixes | Validation/report corrections | GPU reliability fixes | Final release and submission; no new core scope |
+
+This is ambitious and assumes regular contributions from all three members.
+If toolchain verification fails in Week 1, resolve it immediately rather than
+deferring GPU work. Verify CUDA support for Visual Studio 2026; install a supported
+host compiler if needed. Start a packaging prototype by Week 2 to uncover runtime
+distribution problems early.
+
+### Scope priorities
+
+Required: four engines; grayscale/Gaussian/Sobel/convolution; basic and optimized
+CUDA convolution; thread controls; original/output previews; correctness checks;
+reproducible benchmarks; charts; CSV; saved images; responsive error handling;
+Windows launch instructions; report and demo.
+
+Professional polish: consistent visual hierarchy, bounded memory usage, keyboard
+navigation, zoom/fit, progress/cancel, backend availability explanations, useful
+empty states and diagnostics. Plan these into the release, not as last-day styling.
+
+Stretch only after the Week 3 gate: batch image runs, persisted experiment history,
+editable custom kernels, extra themes, and additional filters. No cloud accounts,
+JNI, video processing, or unrelated features in the four-week core.
+
+If behind schedule, defer stretch features and elaborate visual effects first.
+Do not remove correctness validation or invent performance numbers to meet a date.
+
+## Function-level commit policy
+
+Commit after each completed function or small behavior, together with the tests
+and minimal supporting code that make it correct. A half-connected function is
+not a finished checkpoint: group necessary interface/call-site changes so the
+commit builds. Use descriptive messages; push the task branch after verification.
+Record UI checks when unit tests cannot cover behavior. No empty commits or
+unnecessary rewrites to inflate activity.
+
+The requested 1,000-commit minimum is not a delivery acceptance criterion. It
+would require roughly 29-36 commits every calendar day across 4-5 weeks (about
+10-12 per person daily), regardless of the work needed. Track completed functions,
+passing checks and weekly gates instead. Preserve legitimate small commits in
+PR merges; the final count should reflect real work.
 
 ## Contracts to settle before parallel engines
 

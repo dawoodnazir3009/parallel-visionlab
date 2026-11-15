@@ -7,6 +7,8 @@ dimensions, clear/reset, and friendly error handling. No processing algorithms
 or benchmark results are implemented yet.
 
 **Current stage:** Phase 2 implemented; next is sequential grayscale processing.
+The expanded plan targets a professional **VisionPro Lab** release in 4-5 weeks,
+with 24 delivery phases; branding is proposed and not yet applied to the app.
 See the [complete roadmap and current checkpoint](docs/roadmap.md) and the
 [three-person contribution workflow](CONTRIBUTING.md).
 

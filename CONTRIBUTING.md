@@ -32,6 +32,9 @@ multiple computers.
 ## Commit and push
 
 - Make one coherent, reviewable change per commit. Include its relevant tests.
+- Commit each completed function or small behavior when its dependencies and
+  call sites build; keep tests with the function. Push the verified task branch
+  after each such checkpoint. Do not split working code into broken commits.
 - Run `mvn verify` for Java changes and the appropriate native checks for CUDA.
   For documentation-only changes, inspect links, content, and `git diff --check`.
 - Stage specific files, inspect `git diff --cached`, then commit with a meaningful
