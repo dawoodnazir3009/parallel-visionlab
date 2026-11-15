@@ -36,6 +36,7 @@ public final class WorkspaceView extends BorderPane {
         clear.setDisable(true);
         open.getStyleClass().add("primary");
         HBox header = new HBox(12, heading, spacer, clear, open);
+        header.getStyleClass().add("workspace-header");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(24));
         setTop(header);
@@ -54,7 +55,9 @@ public final class WorkspaceView extends BorderPane {
 
         details.setWrapText(true);
         VBox footer = new VBox(8, details, status);
-        footer.setPadding(new Insets(0, 24, 24, 24));
+        footer.getStyleClass().add("workspace-footer");
+        footer.setPadding(new Insets(16, 20, 16, 20));
+        BorderPane.setMargin(footer, new Insets(0, 24, 24, 24));
         status.getStyleClass().add("muted");
         setBottom(footer);
         open.setOnAction(event -> chooseImage());

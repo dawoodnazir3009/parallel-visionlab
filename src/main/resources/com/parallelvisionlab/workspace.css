@@ -1,11 +1,52 @@
-.root { -fx-font-family: "Segoe UI"; -fx-font-size: 14px; -fx-background-color: #101827; }
-.label { -fx-text-fill: #e4eaf4; }
+/* Reference palette: deep ink, midnight, slate, steel, mist, silver. */
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 14px;
+    -lab-ink: #06141B;
+    -lab-midnight: #11212D;
+    -lab-slate: #253745;
+    -lab-steel: #4A5C6A;
+    -lab-mist: #9BA8AB;
+    -lab-silver: #CCD0CF;
+    -fx-background-color: linear-gradient(to bottom right, -lab-slate, -lab-midnight 45%, -lab-ink);
+    -fx-accent: -lab-mist;
+    -fx-focus-color: -lab-silver;
+}
+.label { -fx-text-fill: -lab-silver; }
 .brand { -fx-font-size: 28px; -fx-font-weight: bold; }
-.muted { -fx-text-fill: #9baec7; }
-.canvas { -fx-background-color: #182438; -fx-background-radius: 12; -fx-border-color: #30415b; -fx-border-radius: 12; }
-.button { -fx-background-color: #2a3b54; -fx-text-fill: #edf4ff; -fx-padding: 10 20; -fx-background-radius: 7; -fx-cursor: hand; }
-.button:hover { -fx-background-color: #384f70; }
-.button.primary { -fx-background-color: #2563eb; -fx-font-weight: bold; }
-.button.primary:hover { -fx-background-color: #3878ff; }
-.button:focused { -fx-border-color: #9ac3ff; -fx-border-radius: 7; }
-.button:disabled { -fx-opacity: 0.4; }
+.muted { -fx-text-fill: -lab-mist; }
+.workspace-header { -fx-background-color: transparent; }
+.canvas {
+    -fx-background-color: linear-gradient(to bottom right, -lab-midnight, -lab-ink);
+    -fx-background-radius: 28;
+    -fx-border-color: -lab-steel;
+    -fx-border-radius: 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 24, 0, 0, 10);
+}
+.workspace-footer {
+    -fx-background-color: -lab-midnight;
+    -fx-background-radius: 18;
+    -fx-border-color: -lab-slate;
+    -fx-border-radius: 18;
+}
+.button {
+    -fx-background-color: -lab-slate;
+    -fx-text-fill: -lab-silver;
+    -fx-padding: 10 20;
+    -fx-background-radius: 22;
+    -fx-border-color: -lab-steel;
+    -fx-border-radius: 22;
+    -fx-cursor: hand;
+}
+.button:hover { -fx-background-color: -lab-steel; }
+.button:pressed { -fx-background-color: -lab-midnight; }
+.button.primary {
+    -fx-background-color: -lab-silver;
+    -fx-text-fill: -lab-ink;
+    -fx-border-color: -lab-silver;
+    -fx-font-weight: bold;
+}
+.button.primary:hover { -fx-background-color: -lab-mist; }
+.button.primary:pressed { -fx-background-color: -lab-steel; -fx-text-fill: -lab-silver; }
+.button:focused { -fx-border-color: -lab-silver; -fx-border-width: 2; -fx-padding: 9 19; }
+.button:disabled { -fx-opacity: 0.45; }
