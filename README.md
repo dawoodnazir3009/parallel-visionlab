@@ -14,6 +14,52 @@ See the [complete roadmap and current checkpoint](docs/roadmap.md) and the
 
 ## Build and run (PowerShell)
 
+### Automatic Windows setup
+
+Download [setup.ps1](https://raw.githubusercontent.com/dawoodnazir3009/parallel-visionlab/main/setup.ps1)
+into an empty folder, open PowerShell there, and run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+The script installs missing Git and JDK 21 through Windows Package Manager,
+clones `main` into `parallel-visionlab`, downloads checksum-verified Maven 3.9.11,
+resolves JavaFX/JUnit through Maven, runs tests, and opens the application.
+When run inside a clone, it uses that checkout without pulling or resetting files.
+Repeated runs reuse dependencies. Close the application to finish setup.
+
+Requires Windows x64, PowerShell 5.1+, internet access, and Microsoft App Installer
+(winget) if Git or Java is missing. Vendor installers may request administrator
+approval; a restart or reopened terminal may be required. This is a source setup,
+not an offline installer. No Python installation is needed.
+
+Options:
+
+```powershell
+# Build and test without opening the UI
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -NoLaunch
+# Include the future native CUDA development toolchain
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -InstallNative
+# Choose a clone destination when using a standalone copy of this script
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -Destination C:\Projects\parallel-visionlab
+```
+
+`-InstallNative` installs missing Visual Studio 2022 C++ Build Tools, CMake, and
+CUDA Toolkit through winget. Expect several GB and possible elevation/reboot.
+It does not validate CUDA/compiler compatibility or build kernels, which do not
+exist yet. An NVIDIA driver and CUDA-capable GPU are required for future GPU mode;
+the current JavaFX application works without them. The script does not replace
+an existing GPU driver explicitly, though CUDA's vendor installer can include one.
+
+`requirements.txt` intentionally contains comments only: pip cannot install this
+Java/C++ toolchain. Java library versions are defined in `pom.xml`.
+
+Setup uses [Microsoft winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/install)
+and [Apache Maven binaries](https://maven.apache.org/download.cgi).
+
+### Manual development commands
+
 With Maven installed, run `mvn clean verify` and then `mvn javafx:run`.
 This workspace also has an ignored local Maven installation:
 
