@@ -1,8 +1,7 @@
-# VisionPro Lab delivery roadmap
+# Parallel VisionLab delivery roadmap
 
-Proposed product name: **VisionPro Lab**. The repository, Java package names, and
-current window still use Parallel VisionLab; branding changes are a separate
-implementation task. Target: a polished Windows desktop PDC application for a
+Product name: **Parallel VisionLab**, matching the repository and current window.
+Target: a polished Windows desktop PDC application for a
 three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
