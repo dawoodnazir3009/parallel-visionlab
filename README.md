@@ -6,6 +6,10 @@ window. Phase 2 adds asynchronous image loading, a resizable preview, image
 dimensions, clear/reset, and friendly error handling. No processing algorithms
 or benchmark results are implemented yet.
 
+**Current stage:** Phase 2 implemented; next is sequential grayscale processing.
+See the [complete roadmap and current checkpoint](docs/roadmap.md) and the
+[three-person contribution workflow](CONTRIBUTING.md).
+
 ## Build and run (PowerShell)
 
 With Maven installed, run `mvn clean verify` and then `mvn javafx:run`.
