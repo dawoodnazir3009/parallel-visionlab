@@ -21,10 +21,15 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
     MeasuredBenchmarkView(LabSession session) {
         super(14);
         this.session = session;
-        Spinner<Integer> warmups = new Spinner<>(0,20,3);
-        Spinner<Integer> repeats = new Spinner<>(1,100,10);
-        Spinner<Integer> workers = new Spinner<>(1,256,com.parallelvisionlab.service.ProcessingEngines.automaticWorkers());
-        Spinner<Integer> threshold = new Spinner<>(1,2048,32);
+        var preferences=session.preferences.get();
+        Spinner<Integer> warmups = new Spinner<>(0,20,preferences.warmups());
+        Spinner<Integer> repeats = new Spinner<>(1,100,preferences.iterations());
+        Spinner<Integer> workers = new Spinner<>(1,256,preferences.workers());
+        Spinner<Integer> threshold = new Spinner<>(1,2048,preferences.leafRows());
+        session.preferences.addListener((observable,before,after)->{
+            warmups.getValueFactory().setValue(after.warmups());repeats.getValueFactory().setValue(after.iterations());
+            workers.getValueFactory().setValue(after.workers());threshold.getValueFactory().setValue(after.leafRows());
+        });
         Button run = new Button("Run CPU Comparison");
         run.setId("run-benchmark");
         run.getStyleClass().add("primary");
