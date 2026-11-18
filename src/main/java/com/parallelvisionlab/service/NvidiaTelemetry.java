@@ -27,7 +27,7 @@ public final class NvidiaTelemetry {
         return new Snapshot(fields[0].trim(),load,used,total,power,temperature);
     }
     private static double number(String text) {
-        String value=text.trim();if(value.equals("N/A")||value.contains("Not Supported"))return Double.NaN;
+        String value=text.trim();if(value.equals("N/A")||value.equals("[N/A]")||value.contains("Not Supported"))return Double.NaN;
         double parsed=Double.parseDouble(value);if(!Double.isFinite(parsed))throw new IllegalArgumentException("Invalid telemetry number");return parsed;
     }
 }
