@@ -7,6 +7,35 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExecutorProcessorTest {
+    @Test void interruptionWhileWaitingCancelsWorkersAndPreservesFlag() throws Exception {
+        try (var processor = new ExecutorProcessor(2)) {
+            CountDownLatch running = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CompletableFuture<Boolean> cancelled = new CompletableFuture<>();
+            Thread caller = new Thread(() -> {
+                try {
+                    processor.forRows(2, (start, end) -> {
+                        running.countDown();
+                        try { release.await(); } catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
+                    });
+                    cancelled.complete(false);
+                } catch (CancellationException exception) {
+                    cancelled.complete(Thread.currentThread().isInterrupted());
+                } catch (Throwable error) { cancelled.completeExceptionally(error); }
+            });
+            caller.start();
+            try {
+                assertTrue(running.await(5, TimeUnit.SECONDS));
+                caller.interrupt();
+                assertTrue(cancelled.get(5, TimeUnit.SECONDS));
+            } finally {
+                release.countDown();
+                caller.interrupt();
+                caller.join(5000);
+            }
+            assertFalse(caller.isAlive());
+        }
+    }
     @Test void everyFilterMatchesSequentialAcrossShapesAndWorkerCounts() throws Exception {
         Random random = new Random(42);
         var sequential = new SequentialProcessor();

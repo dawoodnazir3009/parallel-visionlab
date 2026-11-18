@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import com.parallelvisionlab.model.FilterOperation;
+import com.parallelvisionlab.model.ExecutionBackend;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.Test;
@@ -23,8 +24,8 @@ class LabShellSmokeTest {
         toolkit.get(15, TimeUnit.SECONDS);
         FutureTask<Void> check = new FutureTask<>(() -> {
             Stage stage = new Stage();
+            LabShell shell = new LabShell(stage);
             try {
-                LabShell shell = new LabShell(stage);
                 Scene scene = new Scene(shell, 1280, 840);
                 scene.getStylesheets().add(getClass().getResource("/com/parallelvisionlab/workspace.css").toExternalForm());
                 stage.setScene(scene);
@@ -57,8 +58,18 @@ class LabShellSmokeTest {
                     assertEquals(filter != FilterOperation.GAUSSIAN, radius.isDisabled());
                     assertEquals(filter != FilterOperation.GAUSSIAN, sigma.isDisabled());
                 }
+                @SuppressWarnings("unchecked")
+                ComboBox<ExecutionBackend> backend = (ComboBox<ExecutionBackend>) workspace.lookup("#execution-backend");
+                ComboBox<?> threads = (ComboBox<?>) workspace.lookup("#worker-threads");
+                assertEquals(2, backend.getItems().size());
+                assertTrue(threads.isDisabled());
+                backend.setValue(ExecutionBackend.EXECUTOR);
+                assertFalse(threads.isDisabled());
+                backend.setValue(ExecutionBackend.SEQUENTIAL);
+                assertTrue(threads.isDisabled());
                 return null;
             } finally {
+                shell.close();
                 stage.setScene(null);
                 stage.close();
             }
