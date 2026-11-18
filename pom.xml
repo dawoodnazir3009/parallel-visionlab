@@ -43,6 +43,12 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.parallelvisionlab/com.parallelvisionlab.VisionLabApplication</mainClass>
+                    <launcher>ParallelVisionLab</launcher>
+                    <jlinkImageName>ParallelVisionLab</jlinkImageName>
+                    <jlinkZipName>ParallelVisionLab-Windows</jlinkZipName>
+                    <stripDebug>true</stripDebug>
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <noManPages>true</noManPages>
                 </configuration>
             </plugin>
         </plugins>
