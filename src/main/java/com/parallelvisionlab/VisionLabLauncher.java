@@ -18,7 +18,7 @@ public final class VisionLabLauncher {
         java.util.Random random=new java.util.Random(19);for(int i=0;i<pixels.length;i++)pixels[i]=random.nextInt();
         var source=new PixelImage(19,23,pixels);var reference=new SequentialProcessor();
         try(var engines=new ProcessingEngines()){
-            for(var backend:ExecutionBackend.values())for(var operation:FilterOperation.values()){
+            for(var backend:ExecutionBackend.values())if(!backend.gpu())for(var operation:FilterOperation.values()){
                 var request=new ProcessingRequest(operation,2,1.2);
                 if(!ImageValidation.compare(reference.process(source,request),engines.select(backend,2,4).process(source,request),0).passed())throw new IllegalStateException("CPU self-test failed: "+backend+" "+operation);
             }

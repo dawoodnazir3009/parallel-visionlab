@@ -84,7 +84,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         sigma.setId("gaussian-sigma");
         radius.setMaxWidth(Double.MAX_VALUE);
         sigma.setMaxWidth(Double.MAX_VALUE);
-        backend.getItems().setAll(ExecutionBackend.values());
+        backend.getItems().setAll(ProcessingEngines.availableBackends());
         backend.setValue(ExecutionBackend.SEQUENTIAL);
         backend.setMaxWidth(Double.MAX_VALUE);
         backend.setId("execution-backend");
@@ -186,9 +186,9 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         if (input == null) { return; }
         ProcessingRequest request = new ProcessingRequest(operation.getValue(), radius.getValue(), sigma.getValue());
         ExecutionBackend selectedBackend = backend.getValue();
-        int workers = selectedBackend == ExecutionBackend.SEQUENTIAL ? 1 :
+        int workers = selectedBackend == ExecutionBackend.SEQUENTIAL || selectedBackend.gpu() ? 1 :
                 (threads.getValue().equals("Automatic") ? ProcessingEngines.automaticWorkers() : Integer.parseInt(threads.getValue()));
-        String execution = selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
+        String execution = selectedBackend.gpu()? selectedBackend+" (process bridge)" : selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
         int leafRows = threshold.getValue();
         status.setText("Applying " + request.operation() + " using " + execution + "...");
         Task<ProcessedImage> task = new Task<>() {
@@ -197,6 +197,8 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
                 long start = System.nanoTime();
                 PixelImage pixels = engine.process(input, request);
                 long elapsed = System.nanoTime() - start;
+                var expected=selectedBackend==ExecutionBackend.SEQUENTIAL?pixels:new com.parallelvisionlab.engine.SequentialProcessor().process(input,request);
+                if(!com.parallelvisionlab.service.ImageValidation.compare(expected,pixels,selectedBackend.gpu()?1:0).passed())throw new IllegalStateException("Output validation failed; result was not accepted.");
                 return new ProcessedImage(pixels, PixelImages.toFx(pixels), elapsed);
             }
         };
@@ -257,7 +259,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private void updateParameterControls() {
-        threads.setDisable(busy || backend.getValue() == ExecutionBackend.SEQUENTIAL);
+        threads.setDisable(busy || backend.getValue() == ExecutionBackend.SEQUENTIAL || backend.getValue().gpu());
         threshold.setDisable(busy || backend.getValue() != ExecutionBackend.FORK_JOIN);
         boolean unavailable = busy || operation.getValue() != FilterOperation.GAUSSIAN;
         radius.setDisable(unavailable);

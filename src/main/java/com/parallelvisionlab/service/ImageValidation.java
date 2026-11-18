@@ -24,7 +24,7 @@ public final class ImageValidation {
                 int error = Math.abs(((left[i] >>> shift) & 255) - ((right[i] >>> shift) & 255));
                 maximum = Math.max(maximum, error);
                 sum += error;
-                different |= error > tolerance;
+                different |= error > (shift==24?0:tolerance);
             }
             if (different) { mismatch++; }
         }

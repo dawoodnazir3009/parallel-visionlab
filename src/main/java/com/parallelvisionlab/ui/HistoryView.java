@@ -44,7 +44,7 @@ final class HistoryView extends VBox implements AutoCloseable {
         column("Operation",row->row.run().request().operation().toString());
         column("Backend",row->row.measurement().backend().toString());
         column("Median ms",row->String.format(Locale.ROOT,"%.3f",row.measurement().medianMs()));
-        column("Validation",row->"Exact pass");
+        column("Validation",row->row.measurement().rgbTolerance()==0?"Exact pass":"RGB ±1; alpha exact");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPrefHeight(420);table.setPlaceholder(UiCards.label("No measured experiments yet. Run a comparison in Benchmark Lab.","muted"));
         Runnable refresh=()->{table.getItems().clear();for(var run:session.history)for(var measurement:run.measurements())table.getItems().add(new Row(run,measurement));};

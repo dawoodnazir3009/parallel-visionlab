@@ -30,7 +30,10 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
             warmups.getValueFactory().setValue(after.warmups());repeats.getValueFactory().setValue(after.iterations());
             workers.getValueFactory().setValue(after.workers());threshold.getValueFactory().setValue(after.leafRows());
         });
-        Button run = new Button("Run CPU Comparison");
+        CheckBox includeCuda=new CheckBox("Include CUDA (process-bridge timings)");
+        includeCuda.setSelected(com.parallelvisionlab.engine.CudaProcessor.available());
+        includeCuda.disableProperty().bind(session.busy.or(new javafx.beans.property.SimpleBooleanProperty(!com.parallelvisionlab.engine.CudaProcessor.available())));
+        Button run = new Button("Run Backend Comparison");
         run.setId("run-benchmark");
         run.getStyleClass().add("primary");
         run.disableProperty().bind(session.input.isNull().or(session.busy));
@@ -44,12 +47,13 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
             var request = session.request.get();
             String name = session.sourceName.get();
             var config = new BenchmarkConfig(warmups.getValue(),repeats.getValue(),workers.getValue(),threshold.getValue());
+            boolean useCuda=includeCuda.isSelected();
             session.busy.set(true); cancel.setDisable(false);
-            status.setText("Measuring " + request.operation() + " · " + name + ". Each output is validated exactly.");
+            status.setText("Measuring " + request.operation() + " · " + name + ". Every output is validated against sequential.");
             active = new Task<>() {
                 @Override protected BenchmarkRun call() {
-                    var result=new BenchmarkRunner().run(input,name,request,config,value -> updateProgress(value,1));
-                    try {session.archive.save(result);updateMessage("Measured results saved locally. All outputs passed exact validation.");}
+                    var result=new BenchmarkRunner(useCuda).run(input,name,request,config,value -> updateProgress(value,1));
+                    try {session.archive.save(result);updateMessage("Results saved. CPU validation exact; GPU RGB tolerance 1, alpha exact.");}
                     catch(java.io.IOException exception){updateMessage("Measured results available this session; saving history failed: "+exception.getMessage());}
                     return result;
                 }
@@ -72,16 +76,18 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         addColumn("Median ms",m -> format(m.medianMs()));
         addColumn("Min / Max ms",m -> format(m.minimumMs()) + " / " + format(m.maximumMs()));
         addColumn("Speedup",m -> format(m.speedup()) + "x");
-        addColumn("Efficiency",m -> format(m.efficiency()*100) + "%");
+        addColumn("Efficiency",m -> m.backend().gpu()?"N/A":format(m.efficiency()*100) + "%");
         addColumn("MP/s",m -> format(m.megapixelsPerSecond()));
+        addColumn("GPU kernel ms",m -> m.backend().gpu()?format(m.kernelMs()):"—");
+        addColumn("GPU H2D / D2H ms",m -> m.backend().gpu()?format(m.uploadMs())+" / "+format(m.downloadMs()):"—");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPrefHeight(180);
         table.setPlaceholder(UiCards.label("Run a comparison to record measured CPU results.","muted"));
         getChildren().addAll(UiCards.panel("Benchmark configuration",
                 UiCards.columns(field("Warm-up runs",warmups),field("Measured iterations",repeats),field("CPU workers",workers),field("Fork/Join leaf rows",threshold)),
-                new HBox(10,run,cancel),progress,status),
+                includeCuda,new HBox(10,run,cancel),progress,status),
                 UiCards.panel("Latest measured experiment",summary,bars,table),
-                UiCards.label("Engine wall-clock scope: includes allocations, scheduling and synchronization; excludes image decoding, validation, rendering and export. Sequential baseline → ExecutorService → Fork/Join. Median/min/max are measured; warmups are excluded. Background workloads and fixed backend order can affect results.","muted"));
+                UiCards.label("CPU: engine wall-clock. GPU: total process bridge, including startup, files and transfers. GPU event kernel/H2D/D2H times are separate. Validation, decoding and rendering are excluded. Warmups excluded; fixed backend order and other workloads affect results. GPU efficiency is N/A; lower runtime is not guaranteed.","muted"));
         session.history.addListener((javafx.collections.ListChangeListener<BenchmarkRun>) change -> refresh());
         refresh();
     }
@@ -104,7 +110,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         int index=0;
         for(var m:run.measurements()) {
             ProgressBar bar=new ProgressBar(m.medianMs()/largest);bar.setMaxWidth(Double.MAX_VALUE);bar.getStyleClass().add("backend-"+index++);
-            bars.getChildren().add(new VBox(6,UiCards.label(m.backend()+" · "+format(m.medianMs())+" ms · exact pass","chart-label"),bar));
+            bars.getChildren().add(new VBox(6,UiCards.label(m.backend()+" · "+format(m.medianMs())+" ms · validated","chart-label"),bar));
         }
     }
     private static String format(double value) {return String.format(Locale.ROOT,"%.3f",value);}

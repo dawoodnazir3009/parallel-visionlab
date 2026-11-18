@@ -9,5 +9,10 @@ public record BenchmarkRun(String id, Instant timestamp, String source, String i
                            String javaVersion, String operatingSystem) {
     public BenchmarkRun { measurements = List.copyOf(measurements); }
     public record Measurement(ExecutionBackend backend, int workers, double medianMs, double minimumMs,
-                              double maximumMs, double speedup, double efficiency, double megapixelsPerSecond) { }
+                              double maximumMs, double speedup, double efficiency, double megapixelsPerSecond,
+                              double kernelMs,double uploadMs,double downloadMs,int rgbTolerance) {
+        public Measurement(ExecutionBackend backend,int workers,double medianMs,double minimumMs,double maximumMs,double speedup,double efficiency,double megapixelsPerSecond){
+            this(backend,workers,medianMs,minimumMs,maximumMs,speedup,efficiency,megapixelsPerSecond,0,0,0,0);
+        }
+    }
 }

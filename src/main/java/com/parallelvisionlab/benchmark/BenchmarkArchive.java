@@ -30,6 +30,7 @@ public final class BenchmarkArchive {
             p.setProperty(key+"backend",m.backend().name());p.setProperty(key+"workers",""+m.workers());
             p.setProperty(key+"median",""+m.medianMs());p.setProperty(key+"min",""+m.minimumMs());p.setProperty(key+"max",""+m.maximumMs());
             p.setProperty(key+"speedup",""+m.speedup());p.setProperty(key+"efficiency",""+m.efficiency());p.setProperty(key+"throughput",""+m.megapixelsPerSecond());
+            p.setProperty(key+"kernelMs",""+m.kernelMs());p.setProperty(key+"uploadMs",""+m.uploadMs());p.setProperty(key+"downloadMs",""+m.downloadMs());p.setProperty(key+"tolerance",""+m.rgbTolerance());
         }
         Files.createDirectories(directory);
         Path temporary=Files.createTempFile(directory,"pending-",".tmp");
@@ -63,9 +64,13 @@ public final class BenchmarkArchive {
         for(int i=0;i<count;i++) {
             String key="m."+i+".";int workers=integer(p,key+"workers");
             double median=positive(p,key+"median"),min=positive(p,key+"min"),max=positive(p,key+"max");
-            if(workers<1||workers>256||min>median||median>max)throw new IOException("Invalid measurement");
-            rows.add(new BenchmarkRun.Measurement(ExecutionBackend.valueOf(p.getProperty(key+"backend")),workers,median,min,max,
-                    positive(p,key+"speedup"),positive(p,key+"efficiency"),positive(p,key+"throughput")));
+            var backend=ExecutionBackend.valueOf(p.getProperty(key+"backend"));
+            if((backend.gpu()?workers!=0:workers<1||workers>256)||min>median||median>max)throw new IOException("Invalid measurement");
+            int tolerance=Integer.parseInt(p.getProperty(key+"tolerance","0"));
+            if(tolerance<0||tolerance>1)throw new IOException("Invalid tolerance");
+            rows.add(new BenchmarkRun.Measurement(backend,workers,median,min,max,
+                    positive(p,key+"speedup"),backend.gpu()?Double.NaN:positive(p,key+"efficiency"),positive(p,key+"throughput"),
+                    event(p,key+"kernelMs"),event(p,key+"uploadMs"),event(p,key+"downloadMs"),tolerance));
         }
         return new BenchmarkRun(id,Instant.parse(p.getProperty("timestamp")),Objects.requireNonNull(p.getProperty("source")),
                 Objects.requireNonNull(p.getProperty("hash")),width,height,
@@ -74,6 +79,7 @@ public final class BenchmarkArchive {
                 Objects.requireNonNull(p.getProperty("java")),Objects.requireNonNull(p.getProperty("os")));
     }
     private static int integer(Properties p,String key){return Integer.parseInt(p.getProperty(key));}
+    private static double event(Properties p,String key)throws IOException{double value=Double.parseDouble(p.getProperty(key,"0"));if(!Double.isFinite(value)||value<0)throw new IOException("Invalid event timing");return value;}
     private static double positive(Properties p,String key)throws IOException {
         double value=Double.parseDouble(p.getProperty(key));
         if(!Double.isFinite(value)||value<=0)throw new IOException("Invalid metric");return value;
