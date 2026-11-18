@@ -7,6 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Slider;
 import com.parallelvisionlab.model.FilterOperation;
 import com.parallelvisionlab.model.ExecutionBackend;
 import javafx.scene.layout.VBox;
@@ -47,6 +49,10 @@ class LabShellSmokeTest {
                         .filter(button -> button.getText().equals(LabPage.WORKSPACE.title)).findFirst().orElseThrow().fire();
                 assertNotNull(workspace);
                 assertSame(workspace, shell.lookup(".workspace"));
+                CheckBox fit=(CheckBox)workspace.lookup("#preview-fit");
+                Slider zoom=(Slider)workspace.lookup("#preview-zoom");
+                assertTrue(zoom.isDisabled());fit.setSelected(false);assertFalse(zoom.isDisabled());
+                zoom.setValue(150);assertEquals(150,zoom.getValue());fit.setSelected(true);
                 @SuppressWarnings("unchecked")
                 ComboBox<FilterOperation> filters = (ComboBox<FilterOperation>) workspace.lookup("#filter-operation");
                 Spinner<?> radius = (Spinner<?>) workspace.lookup("#gaussian-radius");

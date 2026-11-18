@@ -68,12 +68,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         preview.setAccessibleText("Selected input image preview");
         empty.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         empty.getStyleClass().add("muted");
-        StackPane canvas = new StackPane(empty, preview);
-        canvas.getStyleClass().add("canvas");
-        canvas.setMinSize(0, 225);
-        canvas.setPrefHeight(270);
-        preview.fitWidthProperty().bind(canvas.widthProperty().subtract(40));
-        preview.fitHeightProperty().bind(canvas.heightProperty().subtract(40));
+        ImagePreviewPane canvas = new ImagePreviewPane(preview,empty);
         details.setWrapText(true);
         status.getStyleClass().add("muted");
         status.setWrapText(true);
@@ -113,12 +108,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
-        StackPane outputCanvas = new StackPane(outputEmpty, outputPreview);
-        outputCanvas.getStyleClass().add("canvas");
-        outputCanvas.setMinSize(0, 225);
-        outputCanvas.setPrefHeight(270);
-        outputPreview.fitWidthProperty().bind(outputCanvas.widthProperty().subtract(40));
-        outputPreview.fitHeightProperty().bind(outputCanvas.heightProperty().subtract(40));
+        ImagePreviewPane outputCanvas = new ImagePreviewPane(outputPreview,outputEmpty);
         VBox output = UiCards.panel("Processed output", outputCanvas, save);
         setCenter(new VBox(14, UiCards.columns(input, configuration), output));
         open.setOnAction(event -> chooseImage());
