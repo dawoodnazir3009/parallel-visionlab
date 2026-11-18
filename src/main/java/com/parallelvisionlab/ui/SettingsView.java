@@ -1,43 +1,37 @@
 package com.parallelvisionlab.ui;
 
+import com.parallelvisionlab.benchmark.BenchmarkConfig;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
-/** Session-only preferences until a real benchmark runner consumes them. */
+/** Persistent preferences consumed by the measured benchmark runner. */
 final class SettingsView extends VBox {
-    SettingsView() {
+    SettingsView(LabSession session) {
         super(14);
-        ComboBox<Integer> warmups = new ComboBox<>();
-        warmups.getItems().addAll(3, 5, 10);
-        warmups.setValue(3);
-        ComboBox<Integer> iterations = new ComboBox<>();
-        iterations.getItems().addAll(10, 20, 50);
-        iterations.setValue(10);
-        ComboBox<String> timing = new ComboBox<>();
-        timing.getItems().addAll("End-to-end processing", "Kernel only", "Transfer + kernel");
-        timing.setValue("End-to-end processing");
-        for (ComboBox<?> control : new ComboBox<?>[] { warmups, iterations, timing }) {
-            control.setMaxWidth(Double.MAX_VALUE);
-        }
-        Label feedback = UiCards.label("Session preview only. No benchmark engine is connected.", "muted");
-        Button apply = new Button("Apply Preview Preferences");
-        apply.getStyleClass().add("primary");
-        apply.setOnAction(event -> feedback.setText("Preview selected: " + warmups.getValue() + " warmups, "
-                + iterations.getValue() + " iterations, " + timing.getValue() + ". Not persisted or executed."));
+        var preferences=session.preferences.get();
+        Spinner<Integer> warmups=new Spinner<>(0,20,preferences.warmups());
+        Spinner<Integer> iterations=new Spinner<>(1,100,preferences.iterations());
+        Spinner<Integer> workers=new Spinner<>(1,256,preferences.workers());
+        Spinner<Integer> leafRows=new Spinner<>(1,2048,preferences.leafRows());
+        Label feedback=UiCards.label("Preferences are saved locally under .tools/preferences.properties.","muted");
+        Button apply=new Button("Save Benchmark Preferences");apply.getStyleClass().add("primary");
+        apply.disableProperty().bind(session.busy);
+        for(Spinner<?> spinner:new Spinner<?>[]{warmups,iterations,workers,leafRows})spinner.disableProperty().bind(session.busy);
+        apply.setOnAction(event->{
+            var config=new BenchmarkConfig(warmups.getValue(),iterations.getValue(),workers.getValue(),leafRows.getValue());
+            session.preferences.set(config);
+            try {session.preferenceStore.save(config);feedback.setText("Saved. Benchmark Lab now uses these defaults.");}
+            catch(java.io.IOException exception){feedback.setText("Applied this session; saving failed: "+exception.getMessage());}
+        });
         getChildren().add(UiCards.columns(
-                UiCards.panel("Detected runtime", field("Java runtime", System.getProperty("java.version")),
-                        field("Operating system", System.getProperty("os.name") + " · " + System.getProperty("os.arch")),
-                        field("Logical processors", String.valueOf(Runtime.getRuntime().availableProcessors())),
-                        field("GPU telemetry", "Not connected"),
-                        UiCards.label("Runtime information is detected. An NVIDIA GPU is not assumed on other computers.", "muted")),
-                UiCards.panel("Benchmark preferences", UiCards.label("Warm-up runs", "muted"), warmups,
-                        UiCards.label("Measured iterations", "muted"), iterations,
-                        UiCards.label("Default timing mode", "muted"), timing, apply, feedback)));
+                UiCards.panel("Detected runtime",field("Java runtime",System.getProperty("java.version")),
+                        field("Operating system",System.getProperty("os.name")+" · "+System.getProperty("os.arch")),
+                        field("Logical processors",""+Runtime.getRuntime().availableProcessors()),
+                        field("GPU processing","CUDA executable not connected yet"),
+                        UiCards.label("Runtime values are detected. CPU benchmarks use engine wall-clock timing, not simulated telemetry.","muted")),
+                UiCards.panel("Benchmark preferences",control("Warm-up runs",warmups),control("Measured iterations",iterations),
+                        control("CPU workers",workers),control("Fork/Join leaf rows",leafRows),apply,feedback)));
     }
-
-    private VBox field(String name, String value) {
-        TextField field = new TextField(value);
-        field.setEditable(false);
-        return new VBox(6, UiCards.label(name, "muted"), field);
-    }
+    private VBox field(String name,String value){TextField field=new TextField(value);field.setEditable(false);return control(name,field);}
+    private VBox control(String name,Control field){Label label=UiCards.label(name,"muted");label.setLabelFor(field);return new VBox(6,label,field);}
 }

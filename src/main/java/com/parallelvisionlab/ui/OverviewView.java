@@ -5,7 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 
 final class OverviewView extends VBox {
-    OverviewView(Consumer<LabPage> navigate) {
+    OverviewView(Consumer<LabPage> navigate, LabSession session) {
         super(14);
         Button workspace = new Button("Open Image Workspace →");
         workspace.getStyleClass().add("primary");
@@ -14,6 +14,18 @@ final class OverviewView extends VBox {
         benchmark.setOnAction(event -> navigate.accept(LabPage.BENCHMARK));
         Button monitor = new Button("Open Live Monitor →");
         monitor.setOnAction(event -> navigate.accept(LabPage.MONITOR));
+        VBox measured=new VBox(12);
+        Runnable refresh=()->{
+            measured.getChildren().clear();
+            if(session.history.isEmpty()){measured.getChildren().add(UiCards.empty("No measured experiments yet","Run a CPU comparison in Benchmark Lab."));return;}
+            var run=session.history.getFirst();
+            double largest=run.measurements().stream().mapToDouble(com.parallelvisionlab.benchmark.BenchmarkRun.Measurement::medianMs).max().orElse(1);
+            for(var result:run.measurements()){
+                var bar=new javafx.scene.control.ProgressBar(result.medianMs()/largest);bar.setMaxWidth(Double.MAX_VALUE);
+                measured.getChildren().add(new VBox(6,UiCards.label(result.backend()+" · "+String.format(java.util.Locale.ROOT,"%.3f ms",result.medianMs()),"chart-label"),bar));
+            }
+        };
+        session.history.addListener((javafx.collections.ListChangeListener<com.parallelvisionlab.benchmark.BenchmarkRun>)change->refresh.run());refresh.run();
         getChildren().addAll(
                 UiCards.columns(
                         UiCards.metric("LOGICAL PROCESSORS", String.valueOf(Runtime.getRuntime().availableProcessors()), "Available to this JVM"),
@@ -22,8 +34,8 @@ final class OverviewView extends VBox {
                         UiCards.metric("PROCESSING ENGINES", "3 available", "Sequential · Executor · Fork/Join")),
                 UiCards.columns(
                         UiCards.panel("Processing workspace", UiCards.empty("Start a new image experiment", "Load an image and inspect it at its original resolution."), workspace),
-                        UiCards.panel("Illustrative performance comparison", BenchmarkView.bars(),
-                                UiCards.label("Sample timings only — not measured on your hardware.", "sample-notice"), benchmark)),
+                        UiCards.panel("Latest measured CPU comparison", measured,
+                                UiCards.label("Measured medians from validated experiments. Lower is faster.", "muted"), benchmark)),
                 UiCards.panel("Hardware telemetry", UiCards.label("Inspect real JVM resources and backend availability. GPU measurements are not connected yet.", "muted"), monitor));
     }
 }

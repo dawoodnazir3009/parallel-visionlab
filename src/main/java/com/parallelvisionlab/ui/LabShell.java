@@ -43,7 +43,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         }
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
-        sidebar.getChildren().addAll(spacer, UiCards.label("Image preview ready\nv0.2 · JavaFX desktop\nCharts use labeled sample data", "sidebar-footer"));
+        sidebar.getChildren().addAll(spacer, UiCards.label("3 CPU backends ready\nv0.3 · JavaFX desktop\nValidated measured benchmarks", "sidebar-footer"));
         setLeft(sidebar);
         content.setPadding(new Insets(24));
         scroll.setFitToWidth(true);
@@ -54,15 +54,15 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         pages.put(LabPage.BENCHMARK, new MeasuredBenchmarkView(session));
         pages.put(LabPage.MONITOR, new MonitorView());
         pages.put(LabPage.HISTORY, new HistoryView(owner,session));
-        pages.put(LabPage.SETTINGS, new SettingsView());
-        pages.put(LabPage.OVERVIEW, new OverviewView(this::navigate));
+        pages.put(LabPage.SETTINGS, new SettingsView(session));
+        pages.put(LabPage.OVERVIEW, new OverviewView(this::navigate,session));
         navigate(LabPage.OVERVIEW);
     }
 
     private void navigate(LabPage page) {
         title.setText(page.title);
         subtitle.setText(page.subtitle);
-        Label badge = UiCards.label("UI PREVIEW", "status-pill");
+        Label badge = UiCards.label("CPU LAB READY", "status-pill");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox header = new HBox(12, new VBox(6, title, subtitle), spacer, badge);
