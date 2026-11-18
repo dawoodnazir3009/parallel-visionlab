@@ -9,6 +9,11 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ImageLoaderTest {
+    @Test void rejectsOversizedHeadersBeforePixelAllocation() {
+        assertThrows(IOException.class,()->ImageLoader.validateDimensions(100000,100000,4L*1024*1024*1024));
+        assertThrows(IOException.class,()->ImageLoader.validateDimensions(1024,1024,1024));
+        assertThrows(IOException.class,()->ImageLoader.validateDimensions(0,2,Long.MAX_VALUE));
+    }
     @TempDir Path directory;
     private final ImageLoader loader = new ImageLoader();
 
