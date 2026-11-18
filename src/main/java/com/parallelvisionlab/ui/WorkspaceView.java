@@ -6,7 +6,8 @@ import com.parallelvisionlab.service.PngExporter;
 import com.parallelvisionlab.model.PixelImage;
 import com.parallelvisionlab.model.FilterOperation;
 import com.parallelvisionlab.model.ProcessingRequest;
-import com.parallelvisionlab.engine.SequentialProcessor;
+import com.parallelvisionlab.model.ExecutionBackend;
+import com.parallelvisionlab.service.ProcessingEngines;
 import java.io.File;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -19,7 +20,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 /** Background sequential filters and full-resolution PNG export in the dashboard workspace. */
-public final class WorkspaceView extends BorderPane {
+public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final ImageLoader loader = new ImageLoader();
     private final ImageView preview = new ImageView();
     private final Label details = new Label("No image selected");
@@ -30,6 +31,11 @@ public final class WorkspaceView extends BorderPane {
     private final Stage owner;
     private final Button process = new Button("Apply Filter");
     private final ComboBox<FilterOperation> operation = new ComboBox<>();
+    private final ComboBox<ExecutionBackend> backend = new ComboBox<>();
+    private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8", "16", "32");
+    private final ProcessingEngines engines = new ProcessingEngines();
+    private Task<?> activeTask;
+    private boolean closed;
     private final Spinner<Integer> radius = new Spinner<>(1, 7, 2);
     private final Spinner<Double> sigma = new Spinner<>(0.1, 10.0, 1.2, 0.1);
     private final ProgressIndicator activity = new ProgressIndicator();
@@ -71,13 +77,15 @@ public final class WorkspaceView extends BorderPane {
         sigma.setId("gaussian-sigma");
         radius.setMaxWidth(Double.MAX_VALUE);
         sigma.setMaxWidth(Double.MAX_VALUE);
-        ComboBox<String> backend = choice("Sequential Java");
-        ComboBox<String> threads = choice("Automatic", "2", "4", "8", "16");
-        backend.setDisable(true);
+        backend.getItems().setAll(ExecutionBackend.values());
+        backend.setValue(ExecutionBackend.SEQUENTIAL);
+        backend.setMaxWidth(Double.MAX_VALUE);
+        backend.setId("execution-backend");
+        threads.setId("worker-threads");
         threads.setDisable(true);
         process.getStyleClass().add("primary");
         process.setDisable(true);
-        process.setTooltip(new Tooltip("Apply the selected filter to the original image using sequential Java."));
+        process.setTooltip(new Tooltip("Apply the selected filter and backend to the original image."));
         activity.setPrefSize(22, 22);
         activity.setMaxSize(22, 22);
         activity.setAccessibleText("Image operation in progress");
@@ -86,7 +94,7 @@ public final class WorkspaceView extends BorderPane {
         VBox configuration = UiCards.panel("Processing configuration",
                 field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
                 field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
-                new HBox(12, process, activity), UiCards.label("All four sequential filters are available. Borders replicate the nearest pixel; alpha is preserved. Parallel/CUDA engines are not connected.", "sample-notice"));
+                new HBox(12, process, activity), UiCards.label("Sequential and ExecutorService support all four filters. Thread counts apply to multithreading. Fork/Join and CUDA are not connected.", "sample-notice"));
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
@@ -104,6 +112,8 @@ public final class WorkspaceView extends BorderPane {
         operation.valueProperty().addListener((observable, before, after) -> configurationChanged());
         radius.valueProperty().addListener((observable, before, after) -> configurationChanged());
         sigma.valueProperty().addListener((observable, before, after) -> configurationChanged());
+        backend.valueProperty().addListener((observable, before, after) -> configurationChanged());
+        threads.valueProperty().addListener((observable, before, after) -> configurationChanged());
         updateParameterControls();
         clear.setOnAction(event -> {
             preview.setImage(null);
@@ -166,11 +176,16 @@ public final class WorkspaceView extends BorderPane {
         PixelImage input = source;
         if (input == null) { return; }
         ProcessingRequest request = new ProcessingRequest(operation.getValue(), radius.getValue(), sigma.getValue());
-        status.setText("Applying " + request.operation() + " using sequential Java...");
+        ExecutionBackend selectedBackend = backend.getValue();
+        int workers = selectedBackend == ExecutionBackend.SEQUENTIAL ? 1 :
+                (threads.getValue().equals("Automatic") ? ProcessingEngines.automaticWorkers() : Integer.parseInt(threads.getValue()));
+        String execution = selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
+        status.setText("Applying " + request.operation() + " using " + execution + "...");
         Task<ProcessedImage> task = new Task<>() {
             @Override protected ProcessedImage call() {
+                var engine = engines.select(selectedBackend, workers);
                 long start = System.nanoTime();
-                PixelImage pixels = new SequentialProcessor().process(input, request);
+                PixelImage pixels = engine.process(input, request);
                 long elapsed = System.nanoTime() - start;
                 return new ProcessedImage(pixels, PixelImages.toFx(pixels), elapsed);
             }
@@ -180,7 +195,7 @@ public final class WorkspaceView extends BorderPane {
             resultOperation = request.operation();
             outputPreview.setImage(processed.preview());
             outputEmpty.setVisible(false);
-            status.setText(String.format(Locale.ROOT, "%s complete · %.2f ms single execution (not a benchmark). Original preserved.", request.operation(), processed.nanoseconds() / 1_000_000.0));
+            status.setText(String.format(Locale.ROOT, "%s · %s · %.2f ms single execution (not a benchmark). Original preserved.", request.operation(), execution, processed.nanoseconds() / 1_000_000.0));
         });
     }
 
@@ -217,6 +232,7 @@ public final class WorkspaceView extends BorderPane {
         activity.setVisible(busy);
         activity.setManaged(busy);
         operation.setDisable(busy);
+        backend.setDisable(busy);
         updateParameterControls();
         open.setDisable(busy);
         clear.setDisable(busy || source == null);
@@ -225,6 +241,7 @@ public final class WorkspaceView extends BorderPane {
     }
 
     private void updateParameterControls() {
+        threads.setDisable(busy || backend.getValue() != ExecutionBackend.EXECUTOR);
         boolean unavailable = busy || operation.getValue() != FilterOperation.GAUSSIAN;
         radius.setDisable(unavailable);
         sigma.setDisable(unavailable);
@@ -237,11 +254,17 @@ public final class WorkspaceView extends BorderPane {
     }
 
     private <T> void runTask(Task<T> task, Consumer<T> success) {
+        if (closed) { return; }
+        activeTask = task;
         setBusy(true);
         task.setOnSucceeded(event -> {
+            activeTask = null;
+            if (closed) { return; }
             try { success.accept(task.getValue()); } finally { setBusy(false); }
         });
         task.setOnFailed(event -> {
+            activeTask = null;
+            if (closed) { return; }
             setBusy(false);
             status.setText("Operation failed. Your previous image and result are preserved.");
             Alert alert = new Alert(Alert.AlertType.ERROR, task.getException().getMessage());
@@ -253,6 +276,12 @@ public final class WorkspaceView extends BorderPane {
         Thread worker = new Thread(task, "visionlab-image-task");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    @Override public void close() {
+        closed = true;
+        if (activeTask != null) { activeTask.cancel(true); }
+        engines.close();
     }
 
     private record LoadedImage(Image preview, PixelImage pixels) { }
