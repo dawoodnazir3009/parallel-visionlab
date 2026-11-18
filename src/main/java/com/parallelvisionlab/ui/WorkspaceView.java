@@ -18,7 +18,7 @@ public final class WorkspaceView extends BorderPane {
     private final ImageView preview = new ImageView();
     private final Label details = new Label("No image selected");
     private final Label status = new Label("Ready. Open an image to get started.");
-    private final Button open = new Button("Open image");
+    private final Button open = new Button("Choose Image");
     private final Button clear = new Button("Clear");
     private final Label empty = new Label("Your image will appear here\nPNG, JPEG, BMP or GIF");
     private final Stage owner;
@@ -26,40 +26,41 @@ public final class WorkspaceView extends BorderPane {
     public WorkspaceView(Stage owner) {
         this.owner = owner;
         getStyleClass().add("workspace");
-        Label brand = new Label("Parallel VisionLab");
-        brand.getStyleClass().add("brand");
-        Label subtitle = new Label("IMAGE PROCESSING WORKSPACE");
-        subtitle.getStyleClass().add("muted");
-        VBox heading = new VBox(6, subtitle, brand);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
         clear.setDisable(true);
         open.getStyleClass().add("primary");
-        HBox header = new HBox(12, heading, spacer, clear, open);
-        header.getStyleClass().add("workspace-header");
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(24));
-        setTop(header);
-
         preview.setPreserveRatio(true);
         preview.setSmooth(true);
+        preview.setAccessibleText("Selected input image preview");
         empty.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         empty.getStyleClass().add("muted");
         StackPane canvas = new StackPane(empty, preview);
         canvas.getStyleClass().add("canvas");
-        canvas.setMinSize(0, 0);
+        canvas.setMinSize(0, 225);
+        canvas.setPrefHeight(270);
         preview.fitWidthProperty().bind(canvas.widthProperty().subtract(40));
         preview.fitHeightProperty().bind(canvas.heightProperty().subtract(40));
-        BorderPane.setMargin(canvas, new Insets(0, 24, 20, 24));
-        setCenter(canvas);
-
         details.setWrapText(true);
-        VBox footer = new VBox(8, details, status);
-        footer.getStyleClass().add("workspace-footer");
-        footer.setPadding(new Insets(16, 20, 16, 20));
-        BorderPane.setMargin(footer, new Insets(0, 24, 24, 24));
         status.getStyleClass().add("muted");
-        setBottom(footer);
+        status.setWrapText(true);
+        HBox actions = new HBox(10, open, clear);
+        VBox input = UiCards.panel("Input image", canvas, details, actions, status);
+        ComboBox<String> operation = choice("Grayscale", "Gaussian Blur", "Sobel Edge Detection", "Sharpen Convolution");
+        ComboBox<String> backend = choice("Sequential Java", "Java Multithreading", "Java Fork/Join", "CUDA GPU — Basic Kernel", "CUDA GPU — Tiled Kernel");
+        ComboBox<String> threads = choice("Automatic", "2", "4", "8", "16");
+        operation.setDisable(true);
+        backend.setDisable(true);
+        threads.setDisable(true);
+        Button process = new Button("Preview Filter");
+        process.getStyleClass().add("primary");
+        process.setDisable(true);
+        process.setTooltip(new Tooltip("Processing engines are planned in the next project phases."));
+        VBox configuration = UiCards.panel("Processing configuration",
+                field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
+                process, UiCards.label("Image loading works. Filter controls become available when the Java/CUDA engines are implemented.", "sample-notice"));
+        Button save = new Button("Save Output");
+        save.setDisable(true);
+        VBox output = UiCards.panel("Processed output", UiCards.empty("Processed image appears here", "Run an implemented filter to create output. No simulated image is generated."), save);
+        setCenter(new VBox(14, UiCards.columns(input, configuration), output));
         open.setOnAction(event -> chooseImage());
         clear.setOnAction(event -> {
             preview.setImage(null);
@@ -68,6 +69,20 @@ public final class WorkspaceView extends BorderPane {
             status.setText("Ready. Open an image to get started.");
             clear.setDisable(true);
         });
+    }
+
+    private ComboBox<String> choice(String... values) {
+        ComboBox<String> choice = new ComboBox<>();
+        choice.getItems().addAll(values);
+        choice.getSelectionModel().selectFirst();
+        choice.setMaxWidth(Double.MAX_VALUE);
+        return choice;
+    }
+
+    private VBox field(String name, Control control) {
+        Label label = UiCards.label(name, "muted");
+        label.setLabelFor(control);
+        return new VBox(6, label, control);
     }
 
     private void chooseImage() {
