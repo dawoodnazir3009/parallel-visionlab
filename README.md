@@ -4,7 +4,8 @@ Java 21 / JavaFX desktop project for comparing sequential, ExecutorService,
 Fork/Join, and custom CUDA image processing. Phase 1 contains only the application
 window. Phase 2 adds asynchronous image loading, a resizable preview, image
 dimensions, clear/reset, and friendly error handling. The first processing engine
-now provides deterministic sequential grayscale and full-resolution PNG export.
+now provides grayscale, Gaussian blur, Sobel edges, sharpen convolution, and
+full-resolution PNG export. The generic convolution API supports custom kernels.
 There are no measured benchmark results yet.
 
 The desktop UI now follows the supplied HTML dashboard: a sidebar links Overview,
@@ -12,11 +13,12 @@ Image Workspace, Benchmark Lab, Live Hardware Monitor, Experiment History, and
 Settings. Image loading remains functional. Benchmark cards/bars/table and sample
 CSV export use clearly labeled illustrative data. The monitor reads real system
 CPU load and JVM heap; GPU, temperatures, power and per-core utilization are not
-connected. Settings are session-only preview controls. Sequential grayscale and
-PNG saving work; other filters and parallel engines are not implemented yet.
+connected. Settings are session-only preview controls. All four sequential
+filters and PNG saving work; parallel engines are not implemented yet.
 
-**Current stage:** Pixel model, sequential grayscale, output preview and PNG export
-implemented (Phases 3-5 core). Next: generic convolution and sequential filters.
+**Current stage:** Sequential filter milestone implemented (Phases 3-8 core),
+including parameter controls and output export. Next: CI and ExecutorService.
+See [the filter contract](docs/filter-contract.md) for exact algorithm rules.
 The expanded plan targets a professional **Parallel VisionLab** release in 4-5 weeks,
 with 24 delivery phases.
 See the [complete roadmap and current checkpoint](docs/roadmap.md) and the
@@ -119,10 +121,13 @@ For a manual UI check, navigate to **Image Workspace** first:
 5. Choose a corrupt file using **All files**; confirm an error appears and the
    previous image remains. Then load another valid image.
 6. Click **Clear** to return to the empty workspace.
-7. Load an image again and click **Apply Grayscale**. Confirm the original stays
+7. Load an image again, select Grayscale and click **Apply Filter**. Confirm the original stays
    colored and a grayscale result appears below. Navigate away/back to check both.
 8. Click **Save PNG**, reopen the saved file and confirm its original dimensions.
    Loading another valid image or clearing should remove the old result.
+9. Try Gaussian Blur (radius 1-7, sigma 0.1-10), Sobel Edge Detection and Sharpen
+   Convolution. Parameter controls should enable only for Gaussian. Changing a
+   filter/parameter should clear output until you apply again. Export each result.
 
 Processing and PNG writing run in background tasks; controls prevent overlapping
 operations. The single-execution time shown after processing includes engine

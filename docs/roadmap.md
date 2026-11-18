@@ -13,8 +13,15 @@ opt-in desktop smoke test enabled. The latest processing work was tested without
 desktop automation; the real picker/process/save walkthrough still needs a user
 check. Charts and sample CSV remain illustrative, not recorded benchmarks.
 CPU/JVM telemetry is available; parallel engines, GPU telemetry, CUDA kernels and
-real benchmarks are not implemented. Next: convolution contracts and core, then
-Gaussian blur and Sobel. Later filters will extend the initial grayscale interface.
+real benchmarks are not implemented.
+
+Sequential-filter follow-up: generic convolution, Gaussian blur, Sobel and sharpen
+are now implemented behind immutable processing requests. The workspace exposes
+all four filters and bounded Gaussian parameters; changing configuration clears
+stale output. The expanded suite passes 35 tests with the desktop smoke test
+enabled. Full manual image/filter/save interaction still needs user validation.
+Next: Phase 9 CI/team integration, then Phase 10 ExecutorService. The unchanged
+sample benchmark/history screens do not represent these single filter runs.
 
 ## Delivery phases
 
@@ -22,12 +29,12 @@ Gaussian blur and Sobel. Later filters will extend the initial grayscale interfa
 | --- | --- | --- | --- |
 | 1. Foundation | Done | Java 21 modular Maven app, JavaFX window, environment inventory, Git repository | Build passes and real window opens |
 | 2. Image workspace | Implemented | File picker, asynchronous decoding, proportional preview, dimensions, clear, error messages | Three decoder tests pass; complete README manual UI walkthrough |
-| 3. Pixel and engine contracts | Core implemented | Immutable pixel model and grayscale interface; generalized filter requests follow with convolution | Input validation and ownership tests pass |
+| 3. Pixel and engine contracts | Implemented | Immutable pixels, filter requests, operation dispatch and validated kernels | Input validation and ownership tests pass |
 | 4. Sequential grayscale | Implemented | CPU reference implementation and known-color fixtures | Exact pixels, alpha, input ownership and interruption tests pass |
 | 5. Processing workspace | Implemented; manual check pending | Original/result previews, background grayscale, save PNG; selectors fixed to supported operation/backend | Pipeline and export tests pass; manual load/process/save checklist pending |
-| 6. Convolution core | Next | Kernel validation, documented orientation and border mode | Hand-calculated matrices; narrow/odd images |
-| 7. Gaussian blur | Planned | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, reference outputs |
-| 8. Sobel edges | Planned | Gradient and magnitude rules, clamping | Flat images, known edges, border cases |
+| 6. Convolution core | Implemented | Validated kernels, correlation orientation, replicated borders, sharpen preset | Hand-calculated matrices, alpha and clamping tests pass |
+| 7. Gaussian blur | Implemented | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, impulse/constant-image tests pass |
+| 8. Sobel edges | Implemented | Reference grayscale, gradient magnitude, clamping | Flat/narrow images and known-edge tests pass |
 | 9. CI and team integration | Planned | Java build/test workflow, fixtures, PR checklist | Clean clone builds in CI; CUDA suite separate |
 | 10. ExecutorService engine | Planned | Row/tile partitions, thread configuration, managed pool | Reference agreement; excess workers and pool cleanup |
 | 11. Fork/Join engine | Planned | Recursive tasks, split threshold, parallelism controls | Reference agreement; threshold boundaries |
@@ -152,12 +159,12 @@ incompatible image formats. Integration happens through reviewed pull requests.
 
 ## Next small commits
 
-1. Define immutable convolution kernels and validate odd dimensions/finite weights.
-2. Fix convolution orientation, border handling, alpha behavior and rounding.
-3. Implement generic sequential convolution with hand-calculated fixtures.
-4. Generate normalized Gaussian kernels with sigma/radius validation.
-5. Add Sobel gradients and documented magnitude/clamping.
-6. Enable the new filter choices and extend preview/export regression checks.
+1. Add a Java 21 Maven CI workflow and document task ownership.
+2. Define disjoint row partitions and test odd sizes/excess worker counts.
+3. Implement ExecutorService grayscale, then convolution and Sobel.
+4. Test exact sequential/parallel agreement for all operations and parameters.
+5. Add managed executor shutdown and backend/thread-count controls.
+6. Complete the manual sequential filter walkthrough before parallel integration.
 
 Split when a change has its own purpose and can be reviewed. Keep tightly coupled
 code and tests together; each pushed commit should build. Commit count is an
