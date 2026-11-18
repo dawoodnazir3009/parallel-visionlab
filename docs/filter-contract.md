@@ -70,6 +70,7 @@ shutdown cancels queued/running futures and stops the pool without blocking the
 JavaFX thread. Single-execution timing excludes pool selection/replacement but
 includes lazy thread startup, scheduling, synchronization and engine allocations.
 
-Fork/Join must also match the sequential fixtures exactly.
-CUDA floating-point tolerances must be explicitly chosen and reported before
-cross-backend acceptance; do not silently loosen them after a mismatch.
+Fork/Join also matches the sequential fixtures exactly. CUDA basic/tiled kernels
+have been tested on the RTX 4050 with RGB tolerance 1 and exact alpha. Tolerance
+and timing scope are recorded in experiment files and CSV. No silent tolerance
+changes or CPU fallback occur when native execution/validation fails.

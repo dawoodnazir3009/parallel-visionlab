@@ -1,32 +1,37 @@
-# Environment inventory
+# Verified development environment
 
-Verified on Windows, November 15, 2026.
+Updated November 18, 2026 (Asia/Karachi).
 
 | Component | Observed status |
 | --- | --- |
-| JDK / javac | Temurin 21.0.12.1; JAVA_HOME configured |
+| OS | Windows 11 x64 |
+| Java | Temurin JDK 21.0.12.1 |
 | Git | 2.56.0.windows.2 |
-| NVIDIA GPU | GeForce RTX 4050 Laptop GPU, 6 GB |
-| NVIDIA driver | 610.47; nvidia-smi works |
-| CUDA Toolkit / nvcc | Not found on PATH or in standard toolkit directory |
-| Maven | Not on PATH; project-local 3.9.11 bootstrap used |
-| JavaFX | Maven-managed 21.0.2; no standalone SDK required |
-| MSVC | Visual Studio Build Tools 2026; MSVC 14.51.36231 found |
-| CMake | 4.3.1-msvc1; bundled with Visual Studio, not on PATH |
+| Maven | Project-local 3.9.11; dependency cache under .tools/repository |
+| JavaFX | Maven-managed 21.0.2, named application module |
+| GPU | NVIDIA GeForce RTX 4050 Laptop GPU, 6 GB |
+| NVIDIA driver | 610.47; nvidia-smi available |
+| CUDA compiler | 13.5.37, official component ZIPs installed under .tools/cuda |
+| C++ compiler | MSVC 19.51.36260, Visual Studio Build Tools 2026 |
+| CMake / Ninja | Bundled with Visual Studio; build-cuda.ps1 discovers them |
+| Native runtime | Static CUDA/MSVC linkage; executable imports KERNEL32.dll |
+| Python/pip | Not required |
 
-The CUDA version shown by nvidia-smi describes driver support, not an installed
-CUDA compiler. Install a CUDA Toolkit with a supported MSVC host compiler before
-the CUDA phase; the installed Visual Studio version is not yet validated for CUDA.
-Use a Visual Studio developer shell for native tools. The MSVC executable reports
-compiler version 19.51.36260 for x64 when invoked directly; a complete native
-compile/link test is deferred to the CUDA phase.
+Verified operations: local CUDA compiler version, native CMake build, device query,
+basic/tiled GPU output tests, three CPU engines, portable runtime CPU/GPU self-test,
+standalone setup clone/build, and hosted Windows/Linux Java CI.
 
-The workspace initially had no Git repository and only an empty `project/abc.java`.
-No original files were replaced. Git author name and email were not configured at
-inspection time. The user subsequently supplied an identity, configured locally
-for this repository before the Phase 1 milestone commit.
+The initial full CUDA installer attempt stalled; official, SHA-256-verified
+component ZIPs provided the working local installation. No NVIDIA driver upgrade
+was performed. The version shown by nvidia-smi describes driver support and is not
+proof of an installed compiler; the working nvcc and compiled tests provide that.
 
-The Maven project lives in `parallel-visionlab/`, as requested during setup.
-An initial `clean verify` and real JavaFX window launch passed before relocation.
-Maven reports JavaFX dependency-model warnings for the pinned 21.0.2 artifacts;
-these did not prevent compilation or the verified desktop launch.
+Original empty ../project/abc.java was preserved. The Maven application lives in
+parallel-visionlab. Git author identity is local to the repository. Generated
+toolchains, archives, experiments and target binaries are ignored by Git.
+
+Known tool warnings: JavaFX 21.0.2 dependency-model warnings, classpath JavaFX
+configuration warning in the opt-in UI tests, and a deprecated jlink compression
+option from javafx-maven-plugin 0.0.8. They did not prevent the verified builds.
+The application itself launches as a named module; tests intentionally use the
+classpath. A genuinely separate Windows machine remains a manual release check.
