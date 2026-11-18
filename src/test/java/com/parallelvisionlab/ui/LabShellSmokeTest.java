@@ -111,6 +111,7 @@ class LabShellSmokeTest {
                 }catch(Throwable error){recorded.completeExceptionally(error);}
             });
             ((VBox)shell.getLeft()).getChildren().stream().filter(Button.class::isInstance).map(Button.class::cast).filter(button->button.getText().equals("Benchmark Lab")).findFirst().orElseThrow().fire();
+            shell.applyCss();shell.layout();
             ((CheckBox)shell.lookup("#include-cuda")).setSelected(false);
             Button run=(Button)shell.lookup("#run-benchmark");assertFalse(run.isDisabled());run.fire();
             return null;
