@@ -30,6 +30,7 @@ public final class CudaProcessor implements ImageProcessor {
     @Override public PixelImage sobel(PixelImage source){return execute(source,2,null);}
 
     private PixelImage execute(PixelImage source,int operation,ConvolutionKernel kernel) {
+        lastResult=null;
         if(Thread.currentThread().isInterrupted())throw new CancellationException();
         if(!Files.isRegularFile(executable))throw new IllegalStateException("CUDA executable missing. Run build-cuda.ps1 first.");
         Path directory=null;Process process=null;
@@ -50,8 +51,10 @@ public final class CudaProcessor implements ImageProcessor {
         catch(IOException exception){throw new IllegalStateException("CUDA bridge I/O failed: "+exception.getMessage(),exception);}
         finally {
             if(process!=null&&process.isAlive()){
+                boolean interrupted=Thread.interrupted();
                 process.destroyForcibly();
-                try{process.waitFor(5,TimeUnit.SECONDS);}catch(InterruptedException exception){Thread.currentThread().interrupt();}
+                try{process.waitFor(5,TimeUnit.SECONDS);}catch(InterruptedException exception){interrupted=true;}
+                finally{if(interrupted)Thread.currentThread().interrupt();}
             }
             if(directory!=null){
                 for(String name:new String[]{"input.bin","output.bin","native.log"})try{Files.deleteIfExists(directory.resolve(name));}catch(IOException ignored){ }
