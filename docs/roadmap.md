@@ -6,61 +6,52 @@ three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
 
-As of November 18, 2026, Phases 1-2 and the core of Phases 3-5 are implemented:
-immutable ARGB pixels, a processing interface, sequential grayscale, background
-input/output preview, and full-resolution PNG export. All 19 tests pass with the
-opt-in desktop smoke test enabled. The latest processing work was tested without
-desktop automation; the real picker/process/save walkthrough still needs a user
-check. Charts and sample CSV remain illustrative, not recorded benchmarks.
-CPU/JVM telemetry is available. Fork/Join, GPU telemetry, CUDA kernels and
-real benchmarks are not implemented.
+November 18, 2026: the core application is implemented as version 0.3.0 release
+candidate. It retains the supplied HTML-style JavaFX interface. All three Java
+CPU engines and both CUDA variants are connected, validated and benchmarked.
+Actual RTX 4050 tests, a standalone setup clone, and bundled-runtime CPU/GPU
+self-tests passed. The latest complete local suite has 65 tests with GPU and UI
+tests enabled. Hosted Windows/Linux Java CI passed; hosted workers do not provide
+the hardware tests.
 
-Sequential-filter follow-up: generic convolution, Gaussian blur, Sobel and sharpen
-are now implemented behind immutable processing requests. The workspace exposes
-all four filters and bounded Gaussian parameters; changing configuration clears
-stale output. The expanded suite passes 35 tests with the desktop smoke test
-enabled. Full manual image/filter/save interaction still needs user validation.
-ExecutorService follow-up: Phase 10 supports every filter with exact sequential
-agreement tested across odd/narrow images, alpha and multiple worker counts.
-Automatic/explicit worker controls and pool shutdown are wired into the new UI.
-All 45 local tests pass with the desktop smoke test enabled. The Phase 9 Java 21
-Windows/Linux workflow is configured; its hosted run must be checked on GitHub.
-Next: Phase 11 Fork/Join. Sample benchmark/history screens still do not represent
-these single filter runs; the full manual processing walkthrough remains pending.
+Remaining acceptance work is manual: final visual/file-dialog walkthrough,
+genuinely separate Windows computer, a broader performance dataset and team demo
+rehearsal. These checks are not marked complete merely because code exists.
+The original 4-5 week schedule below remains a planning baseline for that work.
 
 ## Delivery phases
 
-| Phase | Status | Deliverables | Completion check |
-| --- | --- | --- | --- |
-| 1. Foundation | Done | Java 21 modular Maven app, JavaFX window, environment inventory, Git repository | Build passes and real window opens |
-| 2. Image workspace | Implemented | File picker, asynchronous decoding, proportional preview, dimensions, clear, error messages | Three decoder tests pass; complete README manual UI walkthrough |
-| 3. Pixel and engine contracts | Implemented | Immutable pixels, filter requests, operation dispatch and validated kernels | Input validation and ownership tests pass |
-| 4. Sequential grayscale | Implemented | CPU reference implementation and known-color fixtures | Exact pixels, alpha, input ownership and interruption tests pass |
-| 5. Processing workspace | Implemented; manual check pending | Original/result previews, background grayscale, save PNG; selectors fixed to supported operation/backend | Pipeline and export tests pass; manual load/process/save checklist pending |
-| 6. Convolution core | Implemented | Validated kernels, correlation orientation, replicated borders, sharpen preset | Hand-calculated matrices, alpha and clamping tests pass |
-| 7. Gaussian blur | Implemented | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, impulse/constant-image tests pass |
-| 8. Sobel edges | Implemented | Reference grayscale, gradient magnitude, clamping | Flat/narrow images and known-edge tests pass |
-| 9. CI and team integration | Configured; hosted run pending | Java 21 Windows/Linux workflow, shared fixtures and contribution guide | Local suite passes; inspect GitHub Actions result; CUDA separate |
-| 10. ExecutorService engine | Implemented; manual UI check pending | Disjoint rows, reusable fixed pool, backend/thread controls, shutdown | Exact reference agreement, excess workers, failure/interruption and cleanup tests pass |
-| 11. Fork/Join engine | Next | Recursive tasks, split threshold, parallelism controls | Reference agreement; threshold boundaries |
-| 12. Validation service | Planned | Exact/tolerant comparisons, maximum/mean error, mismatch count | Deliberate mismatches detected; tolerance fixed in advance |
-| 13. Benchmark runner | Planned | Warmups, repetitions, timing scopes, cancellation, run metadata | Stable lifecycle; invalid outputs excluded |
-| 14. Metrics and CPU comparison | Planned | Median/spread, speedup, CPU efficiency, throughput | Formula tests and comparable baseline scopes |
-| 15. CUDA toolchain | Planned | Compatible Toolkit/MSVC/CMake, device detection, native executable | Build and device smoke check on RTX 4050 |
-| 16. Java/native bridge | Planned | Versioned protocol, process invocation, timeout, failure handling | Identity round trip, malformed output, missing executable, cleanup |
-| 17. Basic CUDA filters | Planned | Custom grayscale, convolution/Gaussian, Sobel kernels | Reference comparison including partial blocks |
-| 18. Shared-memory convolution | Planned | Cooperative tiles/halos, basic/optimized selector | Output agreement, resource checks, measured comparison |
-| 19. GPU measurement | Planned | Kernel events, transfer and total bridge timings | Synchronization and timing scopes verified |
-| 20. Performance dashboard | Planned | Charts, sortable results, run configuration and validation badges | Table/chart agreement; empty/error states |
-| 21. Results export | Planned | CSV with metadata, units and scope; saved output images | CSV escaping and exported values tested |
-| 22. Professional UX | Planned | Consistent branding/theme, keyboard actions, zoom/fit, progress/cancel, diagnostics, memory limits | Responsive workflows, accessible focus/contrast, actionable errors |
-| 23. Windows distribution | Planned | Runtime bundle/installer, native executable discovery, setup guide | Runs on clean Windows without development JDK; CPU mode works without CUDA |
-| 24. Final validation and submission | Planned | Reproducible experiments, screenshots, architecture/report, presentation, demo script | Full suite and demo rehearsal; limitations documented |
+| Phase | Status | Delivered behavior / evidence |
+| --- | --- | --- |
+| 1. Foundation | Implemented | JDK 21, modular Maven/JavaFX, GitHub |
+| 2. Image workspace | Implemented | Background load, first GIF frame, dimensions, clear, fit/zoom |
+| 3. Pixel/engine contracts | Implemented | Immutable ARGB, kernels, filter requests and backend selection |
+| 4. Sequential grayscale | Verified | Fixed weights/rounding, alpha, known-color tests |
+| 5. Processing workspace | Implemented | Original/output, background execution, PNG export |
+| 6. Convolution | Verified | Orientation, replicated borders, bounds, sharpen preset |
+| 7. Gaussian | Verified | Normalized kernels, bounded radius/sigma, impulse tests |
+| 8. Sobel | Verified | Grayscale stage, gradients, magnitude/clamping, edge tests |
+| 9. CI/team integration | Verified Java CI | Windows/Linux matrix and contribution workflow |
+| 10. ExecutorService | Verified | Reusable pool, disjoint rows, worker controls, failure/shutdown |
+| 11. Fork/Join | Verified | Recursive rows, threshold, cancellation, exact CPU agreement |
+| 12. Validation | Verified | Shape, mismatched pixels, max/mean ARGB error; alpha exact |
+| 13. Benchmark runner | Verified | Warmups, iterations, cancellation, validation outside timing |
+| 14. CPU metrics | Verified | Median/min/max, speedup, CPU efficiency, MP/s |
+| 15. CUDA toolchain | Verified locally | Official component ZIPs, SHA-256, CUDA 13.5.37, MSVC 19.51 |
+| 16. Native bridge | Verified | Versioned files, timeout, process errors, output checks/cleanup |
+| 17. Basic CUDA | Hardware verified | All four filters; odd/narrow/partial-block inputs |
+| 18. Shared-memory convolution | Hardware verified | 16×16 tiles and halos; same contract and real comparison |
+| 19. GPU measurements | Hardware verified | Event kernel/upload/download; separate total bridge wall time |
+| 20. Dashboard | Implemented | Real overview/benchmark charts and comparison tables |
+| 21. Export/history | Verified | PNG, measured CSV, versioned persistent experiment files |
+| 22. Professional UX | Implemented; manual QA pending | Six pages, progress/cancel, fit/zoom, memory limits, live NVIDIA telemetry |
+| 23. Distribution | Built/self-tested; separate-PC check pending | Native Windows launcher, bundled Java/CUDA, portable ZIP |
+| 24. Submission | Report/demo docs ready; rehearsal pending | Reproducible example, architecture, report, release checklist |
 
-Phase numbers describe deliverables, not 24 serial work blocks. Each deliverable
-must pass its checks before dependent work integrates. CI and CUDA environment
-verification can start alongside Phases 3-5. Native kernels depend on the agreed
-CPU contract; charts depend on real measured results.
+See [project report](project-report.md), [native setup/protocol](native-cuda.md),
+[release checklist](release-checklist.md), and [UI handoff](ui-dashboard.md).
+No fake timing samples remain in the active UI. GPU process startup overhead is
+visible; the tiled kernel is not assumed to be universally faster.
 
 ## Four-week delivery with a fifth-week buffer
 
@@ -115,7 +106,7 @@ would require roughly 29-36 commits every calendar day across 4-5 weeks (about
 passing checks and weekly gates instead. Preserve legitimate small commits in
 PR merges; the final count should reflect real work.
 
-## Contracts to settle before parallel engines
+## Established contracts and future extensions
 
 - Store pixels independently of JavaFX, using a documented ARGB channel order,
   dimensions, and immutable input ownership. Convert only at the UI boundary.
@@ -162,14 +153,13 @@ Until Phase 3 establishes interfaces, teammates can independently prepare CI,
 reference fixtures, or CUDA environment verification. Avoid implementing three
 incompatible image formats. Integration happens through reviewed pull requests.
 
-## Next small commits
+## Remaining acceptance checkpoints
 
-1. Inspect the hosted CI results and complete the two-backend manual walkthrough.
-2. Define Fork/Join row task thresholds and recursive split invariants.
-3. Implement Fork/Join filters using the shared deterministic row kernels.
-4. Test exact agreement, tiny/odd inputs, threshold boundaries and shutdown.
-5. Extend backend/parallelism controls without changing the established UI layout.
-6. Begin the validation service before measuring cross-backend performance.
+1. Run the six-page manual UI/file-dialog walkthrough with each teammate.
+2. Test the portable ZIP on a separate Windows computer without development tools.
+3. Benchmark a wider image/filter/resolution/worker-count dataset and retain CSV.
+4. Review source, error paths, report and measurement interpretation together.
+5. Rehearse the presentation/demo and update the final release checklist.
 
 Split when a change has its own purpose and can be reviewed. Keep tightly coupled
 code and tests together; each pushed commit should build. Commit count is an
