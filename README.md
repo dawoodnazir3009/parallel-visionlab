@@ -4,7 +4,15 @@ Java 21 / JavaFX desktop project for comparing sequential, ExecutorService,
 Fork/Join, and custom CUDA image processing. Phase 1 contains only the application
 window. Phase 2 adds asynchronous image loading, a resizable preview, image
 dimensions, clear/reset, and friendly error handling. No processing algorithms
-or benchmark results are implemented yet.
+or measured benchmark results are implemented yet.
+
+The desktop UI now follows the supplied HTML dashboard: a sidebar links Overview,
+Image Workspace, Benchmark Lab, Live Hardware Monitor, Experiment History, and
+Settings. Image loading remains functional. Benchmark cards/bars/table and sample
+CSV export use clearly labeled illustrative data. The monitor reads real system
+CPU load and JVM heap; GPU, temperatures, power and per-core utilization are not
+connected. Settings are session-only preview controls. Filters and output saving
+remain disabled until processing engines are implemented.
 
 **Current stage:** Phase 2 implemented; next is sequential grayscale processing.
 The expanded plan targets a professional **Parallel VisionLab** release in 4-5 weeks,
@@ -94,15 +102,24 @@ processing and benchmarking. CUDA will use a process bridge, without JNI.
 ## Validation plan
 
 Run `mvn verify` for image decoder tests (known pixel, corrupt input, missing file,
-and closed file handles). For a manual UI check:
+and closed file handles), runtime bounds, and sample CSV provenance/locale tests.
+On a Windows desktop, `mvn "-Dvisionlab.uiTests=true" verify` also initializes
+JavaFX, applies the stylesheet, navigates all six pages, and verifies that the
+workspace instance survives navigation. This display-dependent test is skipped
+by default so ordinary CI can run without a display server.
 
-1. Launch the application and click **Open image**.
+For a manual UI check, navigate to **Image Workspace** first:
+
+1. Launch the application and click **Choose Image** in Image Workspace.
 2. Select a PNG/JPEG/BMP/GIF; confirm the filename, dimensions, and preview.
 3. Resize the window; confirm the image keeps its proportions.
 4. Cancel the picker; confirm the current image stays visible.
 5. Choose a corrupt file using **All files**; confirm an error appears and the
    previous image remains. Then load another valid image.
 6. Click **Clear** to return to the empty workspace.
+
+For dashboard-specific checks and availability details, see
+[the UI handoff](docs/ui-dashboard.md).
 
 Image decoding runs on a daemon worker; controls prevent overlapping loads.
 GIF files are accepted, but animation/frame processing is outside this phase.

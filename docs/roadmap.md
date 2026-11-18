@@ -6,12 +6,15 @@ three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
 
-As of November 15, 2026, Phases 1 and 2 are implemented. The latest application
-commit is `1aaad23`, published on GitHub `main`. Maven verification passed with
-three decoder tests, and the Phase 2 window launched and responded. The manual
-picker/resize/error checklist in README still needs a full user walkthrough.
-There are no processing engines, CUDA kernels, benchmarks, or result charts yet.
-The next implementation milestone is Phase 3: sequential grayscale.
+As of November 18, 2026, Phases 1 and 2 are implemented, with an additional
+six-page JavaFX dashboard adapted from the supplied HTML reference. All eight
+tests pass when the opt-in desktop smoke test is enabled. Overview and Benchmark
+were visually inspected on Windows; the full manual picker/resize/error checklist
+still needs a user walkthrough. Charts and CSV contain labeled samples, not
+measured experiments. Live CPU/JVM telemetry is available; GPU telemetry is not.
+There are no processing engines, CUDA kernels or real benchmarks yet. UI preview
+work does not mark the later processing/dashboard phases complete. Next: Phase 3
+pixel/engine contracts, followed by sequential grayscale.
 
 ## Delivery phases
 
