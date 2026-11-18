@@ -7,6 +7,32 @@ import java.util.concurrent.CancellationException;
 
 /** Integer reference: gray = (299R + 587G + 114B + 500) / 1000; preserve alpha. */
 public final class SequentialProcessor implements ImageProcessor {
+    /** Sobel on reference grayscale, replicated borders, Euclidean magnitude clamped to 255. */
+    @Override
+    public PixelImage sobel(PixelImage source) {
+        PixelImage gray = grayscale(source);
+        int width = gray.width(), height = gray.height();
+        int[] output = new int[width * height];
+        int[] kx = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+        int[] ky = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+        for (int y = 0; y < height; y++) {
+            checkInterrupted();
+            for (int x = 0; x < width; x++) {
+                int gx = 0, gy = 0;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    int sx = Math.max(0, Math.min(width - 1, x + dx));
+                    int sy = Math.max(0, Math.min(height - 1, y + dy));
+                    int value = gray.argbAt(sx, sy) & 255;
+                    int index = (dy + 1) * 3 + dx + 1;
+                    gx += value * kx[index];
+                    gy += value * ky[index];
+                }
+                int edge = channel(Math.hypot(gx, gy));
+                output[y * width + x] = (source.argbAt(x, y) & 0xff000000) | (edge << 16) | (edge << 8) | edge;
+            }
+        }
+        return new PixelImage(width, height, output);
+    }
     /** Correlation with replicated borders, independently filtered straight RGB, unchanged center alpha. */
     @Override
     public PixelImage convolve(PixelImage source, ConvolutionKernel kernel) {

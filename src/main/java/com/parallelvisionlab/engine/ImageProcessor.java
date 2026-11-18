@@ -7,4 +7,5 @@ import com.parallelvisionlab.model.ConvolutionKernel;
 public interface ImageProcessor {
     PixelImage grayscale(PixelImage source);
     PixelImage convolve(PixelImage source, ConvolutionKernel kernel);
+    PixelImage sobel(PixelImage source);
 }
