@@ -31,6 +31,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final Label empty = new Label("Your image will appear here\nPNG, JPEG, BMP or GIF");
     private final Stage owner;
     private final Button process = new Button("Apply Filter");
+    private final Button cancel = new Button("Cancel");
     private final ComboBox<FilterOperation> operation = new ComboBox<>();
     private final ComboBox<ExecutionBackend> backend = new ComboBox<>();
     private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8", "16", "32");
@@ -49,6 +50,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private String sourceName = "image";
     private FilterOperation resultOperation;
     private boolean busy;
+    private boolean cancellable;
 
     public WorkspaceView(Stage owner) {
         this(owner, new LabSession());
@@ -101,11 +103,13 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         activity.setAccessibleText("Image operation in progress");
         activity.setVisible(false);
         activity.setManaged(false);
+        cancel.setDisable(true);
+        cancel.setOnAction(event->{if(activeTask!=null){cancel.setDisable(true);status.setText("Cancelling processing...");activeTask.cancel(true);}});
         VBox configuration = UiCards.panel("Processing configuration",
                 field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
                 field("Fork/Join leaf rows", threshold),
                 field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
-                new HBox(12, process, activity), UiCards.label("All three Java CPU backends support every filter. CUDA is not connected yet.", "sample-notice"));
+                new HBox(12, process, cancel, activity), UiCards.label("All three Java CPU backends support every filter. CUDA is not connected yet.", "sample-notice"));
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
@@ -212,7 +216,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
             outputPreview.setImage(processed.preview());
             outputEmpty.setVisible(false);
             status.setText(String.format(Locale.ROOT, "%s · %s · %.2f ms single execution (not a benchmark). Original preserved.", request.operation(), execution, processed.nanoseconds() / 1_000_000.0));
-        });
+        }, true);
     }
 
     private void saveResult() {
@@ -250,6 +254,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
 
     private void updateBusy(boolean busy) {
         this.busy = busy;
+        cancel.setDisable(!busy||activeTask==null||!cancellable);
         activity.setVisible(busy);
         activity.setManaged(busy);
         operation.setDisable(busy);
@@ -277,7 +282,12 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private <T> void runTask(Task<T> task, Consumer<T> success) {
+        runTask(task,success,false);
+    }
+
+    private <T> void runTask(Task<T> task, Consumer<T> success, boolean cancellable) {
         if (closed) { return; }
+        this.cancellable=cancellable;
         activeTask = task;
         setBusy(true);
         task.setOnSucceeded(event -> {
@@ -296,7 +306,13 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
             alert.setHeaderText("The operation could not be completed.");
             alert.showAndWait();
         });
-        Thread worker = new Thread(task, "visionlab-image-task");
+        Thread worker = new Thread(()->{
+            try{task.run();}finally{
+                if(task.isCancelled())javafx.application.Platform.runLater(()->{
+                    if(!closed&&activeTask==task){activeTask=null;setBusy(false);status.setText("Processing cancelled. Previous input/result preserved.");}
+                });
+            }
+        }, "visionlab-image-task");
         worker.setDaemon(true);
         worker.start();
     }
