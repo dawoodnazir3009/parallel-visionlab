@@ -9,7 +9,7 @@ The HTML remains outside the repository; it is not a runtime dependency.
 | Screen | Available behavior | Availability boundary |
 | --- | --- | --- |
 | Overview | Runtime core count/heap limit, shortcut navigation, sample comparison bars | GPU and processing engine cards show unavailable/not connected |
-| Image Workspace | Background loading, four sequential filters, Gaussian radius/sigma, original/result previews, PNG save, clear; state retained across navigation | Backend fixed to sequential; parallel/CUDA are not connected |
+| Image Workspace | Four filters on Sequential/ExecutorService, backend/worker controls, Gaussian radius/sigma, previews, PNG save, clear | Fork/Join and CUDA are not connected |
 | Benchmark Lab | Five sample bars, summary cards and sortable comparison table | Every timing is illustrative; no real runs exist |
 | Live Hardware Monitor | Actual OS CPU load when available, JVM heap, detected core inventory, two bounded history charts, pause/resume | No invented GPU/temperature/power/per-core readings; heap is not total RAM |
 | Experiment History | Empty real-history state, sample CSV save dialog and export status/errors | CSV marks every row as sample; no persistence yet |
@@ -63,6 +63,14 @@ Sequential-filter follow-up: 35 tests pass including convolution orientation,
 Gaussian normalization/impulse, Sobel ramps, output export for every operation,
 and JavaFX filter-control gating. Processing tasks show an activity indicator.
 The HTML-inspired layout is retained. See [filter contract](filter-contract.md).
+
+ExecutorService follow-up: 45 tests pass including exact two-backend comparison,
+row coverage, reuse/reconfiguration, worker failures, interruption while waiting,
+pool shutdown and JavaFX backend/thread-control gating. No desktop control was
+used. Manually compare each filter on Sequential and Java Multithreading, change
+worker counts, navigate away/back, and close while processing. Confirm original
+preservation, stale-output reset and PNG correctness. CPU timings are still
+single executions, not validated benchmark records.
 
 Known limits: JavaFX 21.0.2 still emits the existing dependency-model warnings.
 The opt-in UI test runs JavaFX on the test classpath and emits a configuration

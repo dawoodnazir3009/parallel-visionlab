@@ -52,6 +52,9 @@ git push -u origin feature/sequential-grayscale
 
 Open a pull request into `main`, describe behavior and verification, and have a
 teammate review it. Keep `main` buildable; avoid force pushes to shared branches.
+The Java 21 GitHub Actions matrix runs `mvn verify` on Windows and Linux for pull
+requests and pushes to `main`. Check both jobs before merging. CUDA hardware tests
+and the display-dependent JavaFX smoke test are not part of this hosted matrix.
 To retain small commits, use GitHub's merge-commit option rather than squashing
 when the team wants that history preserved. Repository branch protection and
 required reviews are recommended; they are not configured by this document.

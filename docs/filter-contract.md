@@ -50,8 +50,8 @@ applicable, image allocations and copies. It excludes input decoding, preview
 conversion/rendering and PNG export. It is not a warmed-up repeated benchmark and
 is not added to sample dashboard/history data.
 
-The sequential loops check thread interruption; interactive cancellation and a
-managed task lifecycle remain future work. Large images and large kernels can
+Both CPU engines check interruption. The app cancels active work and closes its
+pool on exit; an interactive Cancel action remains future work. Large images and large kernels can
 be slow and memory-intensive. No optimized/separable implementation is claimed.
 
 ## Validation and next engines
@@ -62,6 +62,14 @@ ownership, rounding/clamping, invalid parameters and interruption. PNG round-tri
 tests run every exposed filter. The opt-in JavaFX test checks selection and
 Gaussian-control availability without desktop automation.
 
-ExecutorService and Fork/Join must first match the sequential fixtures exactly.
+ExecutorService now matches sequential results exactly in regression tests.
+It shares deterministic row kernels, assigns disjoint output rows, and waits for
+all grayscale tasks before Sobel gradient tasks start. A fixed pool is reused;
+worker changes replace it. Failure or interruption cancels sibling tasks; app
+shutdown cancels queued/running futures and stops the pool without blocking the
+JavaFX thread. Single-execution timing excludes pool selection/replacement but
+includes lazy thread startup, scheduling, synchronization and engine allocations.
+
+Fork/Join must also match the sequential fixtures exactly.
 CUDA floating-point tolerances must be explicitly chosen and reported before
 cross-backend acceptance; do not silently loosen them after a mismatch.

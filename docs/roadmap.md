@@ -12,7 +12,7 @@ input/output preview, and full-resolution PNG export. All 19 tests pass with the
 opt-in desktop smoke test enabled. The latest processing work was tested without
 desktop automation; the real picker/process/save walkthrough still needs a user
 check. Charts and sample CSV remain illustrative, not recorded benchmarks.
-CPU/JVM telemetry is available; parallel engines, GPU telemetry, CUDA kernels and
+CPU/JVM telemetry is available. Fork/Join, GPU telemetry, CUDA kernels and
 real benchmarks are not implemented.
 
 Sequential-filter follow-up: generic convolution, Gaussian blur, Sobel and sharpen
@@ -20,8 +20,13 @@ are now implemented behind immutable processing requests. The workspace exposes
 all four filters and bounded Gaussian parameters; changing configuration clears
 stale output. The expanded suite passes 35 tests with the desktop smoke test
 enabled. Full manual image/filter/save interaction still needs user validation.
-Next: Phase 9 CI/team integration, then Phase 10 ExecutorService. The unchanged
-sample benchmark/history screens do not represent these single filter runs.
+ExecutorService follow-up: Phase 10 supports every filter with exact sequential
+agreement tested across odd/narrow images, alpha and multiple worker counts.
+Automatic/explicit worker controls and pool shutdown are wired into the new UI.
+All 45 local tests pass with the desktop smoke test enabled. The Phase 9 Java 21
+Windows/Linux workflow is configured; its hosted run must be checked on GitHub.
+Next: Phase 11 Fork/Join. Sample benchmark/history screens still do not represent
+these single filter runs; the full manual processing walkthrough remains pending.
 
 ## Delivery phases
 
@@ -35,9 +40,9 @@ sample benchmark/history screens do not represent these single filter runs.
 | 6. Convolution core | Implemented | Validated kernels, correlation orientation, replicated borders, sharpen preset | Hand-calculated matrices, alpha and clamping tests pass |
 | 7. Gaussian blur | Implemented | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, impulse/constant-image tests pass |
 | 8. Sobel edges | Implemented | Reference grayscale, gradient magnitude, clamping | Flat/narrow images and known-edge tests pass |
-| 9. CI and team integration | Planned | Java build/test workflow, fixtures, PR checklist | Clean clone builds in CI; CUDA suite separate |
-| 10. ExecutorService engine | Planned | Row/tile partitions, thread configuration, managed pool | Reference agreement; excess workers and pool cleanup |
-| 11. Fork/Join engine | Planned | Recursive tasks, split threshold, parallelism controls | Reference agreement; threshold boundaries |
+| 9. CI and team integration | Configured; hosted run pending | Java 21 Windows/Linux workflow, shared fixtures and contribution guide | Local suite passes; inspect GitHub Actions result; CUDA separate |
+| 10. ExecutorService engine | Implemented; manual UI check pending | Disjoint rows, reusable fixed pool, backend/thread controls, shutdown | Exact reference agreement, excess workers, failure/interruption and cleanup tests pass |
+| 11. Fork/Join engine | Next | Recursive tasks, split threshold, parallelism controls | Reference agreement; threshold boundaries |
 | 12. Validation service | Planned | Exact/tolerant comparisons, maximum/mean error, mismatch count | Deliberate mismatches detected; tolerance fixed in advance |
 | 13. Benchmark runner | Planned | Warmups, repetitions, timing scopes, cancellation, run metadata | Stable lifecycle; invalid outputs excluded |
 | 14. Metrics and CPU comparison | Planned | Median/spread, speedup, CPU efficiency, throughput | Formula tests and comparable baseline scopes |
@@ -159,12 +164,12 @@ incompatible image formats. Integration happens through reviewed pull requests.
 
 ## Next small commits
 
-1. Add a Java 21 Maven CI workflow and document task ownership.
-2. Define disjoint row partitions and test odd sizes/excess worker counts.
-3. Implement ExecutorService grayscale, then convolution and Sobel.
-4. Test exact sequential/parallel agreement for all operations and parameters.
-5. Add managed executor shutdown and backend/thread-count controls.
-6. Complete the manual sequential filter walkthrough before parallel integration.
+1. Inspect the hosted CI results and complete the two-backend manual walkthrough.
+2. Define Fork/Join row task thresholds and recursive split invariants.
+3. Implement Fork/Join filters using the shared deterministic row kernels.
+4. Test exact agreement, tiny/odd inputs, threshold boundaries and shutdown.
+5. Extend backend/parallelism controls without changing the established UI layout.
+6. Begin the validation service before measuring cross-backend performance.
 
 Split when a change has its own purpose and can be reviewed. Keep tightly coupled
 code and tests together; each pushed commit should build. Commit count is an

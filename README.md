@@ -14,10 +14,12 @@ Settings. Image loading remains functional. Benchmark cards/bars/table and sampl
 CSV export use clearly labeled illustrative data. The monitor reads real system
 CPU load and JVM heap; GPU, temperatures, power and per-core utilization are not
 connected. Settings are session-only preview controls. All four sequential
-filters and PNG saving work; parallel engines are not implemented yet.
+filters and PNG saving work with Sequential Java or Java Multithreading
+(ExecutorService). Fork/Join and CUDA are not implemented yet.
 
 **Current stage:** Sequential filter milestone implemented (Phases 3-8 core),
-including parameter controls and output export. Next: CI and ExecutorService.
+including parameter controls and output export. ExecutorService (Phase 10) is
+implemented; Java 21 CI is configured for Windows/Linux. Next: Fork/Join.
 See [the filter contract](docs/filter-contract.md) for exact algorithm rules.
 The expanded plan targets a professional **Parallel VisionLab** release in 4-5 weeks,
 with 24 delivery phases.
@@ -128,6 +130,20 @@ For a manual UI check, navigate to **Image Workspace** first:
 9. Try Gaussian Blur (radius 1-7, sigma 0.1-10), Sobel Edge Detection and Sharpen
    Convolution. Parameter controls should enable only for Gaussian. Changing a
    filter/parameter should clear output until you apply again. Export each result.
+10. Select **Java Multithreading**, choose Automatic or 1/2/4/8/16/32 workers, and
+    apply each filter. Compare against Sequential Java; both should match. Thread
+    controls disable in sequential mode. Changing backend/thread count clears
+    stale output. Close the application while processing to check clean shutdown.
+
+The fixed thread pool is reused between runs and replaced when worker count
+changes. Automatic uses the JVM's available processor count, capped at 256.
+Each operation submits at most one nonempty row task per configured worker;
+small images may use fewer tasks. Closing the app cancels outstanding work and
+shuts down the pool. No speedup is claimed before repeated benchmarks are added.
+
+GitHub Actions builds Java 21 on Windows and Linux for pushes to `main` and pull
+requests. The desktop smoke test is opt-in and excluded from this ordinary CI
+matrix; CUDA tests will require a separate GPU environment.
 
 Processing and PNG writing run in background tasks; controls prevent overlapping
 operations. The single-execution time shown after processing includes engine
