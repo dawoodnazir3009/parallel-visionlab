@@ -6,15 +6,15 @@ three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
 
-As of November 18, 2026, Phases 1 and 2 are implemented, with an additional
-six-page JavaFX dashboard adapted from the supplied HTML reference. All eight
-tests pass when the opt-in desktop smoke test is enabled. Overview and Benchmark
-were visually inspected on Windows; the full manual picker/resize/error checklist
-still needs a user walkthrough. Charts and CSV contain labeled samples, not
-measured experiments. Live CPU/JVM telemetry is available; GPU telemetry is not.
-There are no processing engines, CUDA kernels or real benchmarks yet. UI preview
-work does not mark the later processing/dashboard phases complete. Next: Phase 3
-pixel/engine contracts, followed by sequential grayscale.
+As of November 18, 2026, Phases 1-2 and the core of Phases 3-5 are implemented:
+immutable ARGB pixels, a processing interface, sequential grayscale, background
+input/output preview, and full-resolution PNG export. All 19 tests pass with the
+opt-in desktop smoke test enabled. The latest processing work was tested without
+desktop automation; the real picker/process/save walkthrough still needs a user
+check. Charts and sample CSV remain illustrative, not recorded benchmarks.
+CPU/JVM telemetry is available; parallel engines, GPU telemetry, CUDA kernels and
+real benchmarks are not implemented. Next: convolution contracts and core, then
+Gaussian blur and Sobel. Later filters will extend the initial grayscale interface.
 
 ## Delivery phases
 
@@ -22,10 +22,10 @@ pixel/engine contracts, followed by sequential grayscale.
 | --- | --- | --- | --- |
 | 1. Foundation | Done | Java 21 modular Maven app, JavaFX window, environment inventory, Git repository | Build passes and real window opens |
 | 2. Image workspace | Implemented | File picker, asynchronous decoding, proportional preview, dimensions, clear, error messages | Three decoder tests pass; complete README manual UI walkthrough |
-| 3. Pixel and engine contracts | Next | Immutable pixel model, filter request/result types, dimension/channel/alpha rules | Input validation and ownership tests |
-| 4. Sequential grayscale | Planned | CPU reference implementation and known-color fixtures | Exact expected pixels, alpha preservation, input unchanged |
-| 5. Processing workspace | Planned | Original/result panes, filter selection, background processing, save PNG | Process/load/reset transitions; export round trip |
-| 6. Convolution core | Planned | Kernel validation, documented orientation and border mode | Hand-calculated matrices; narrow/odd images |
+| 3. Pixel and engine contracts | Core implemented | Immutable pixel model and grayscale interface; generalized filter requests follow with convolution | Input validation and ownership tests pass |
+| 4. Sequential grayscale | Implemented | CPU reference implementation and known-color fixtures | Exact pixels, alpha, input ownership and interruption tests pass |
+| 5. Processing workspace | Implemented; manual check pending | Original/result previews, background grayscale, save PNG; selectors fixed to supported operation/backend | Pipeline and export tests pass; manual load/process/save checklist pending |
+| 6. Convolution core | Next | Kernel validation, documented orientation and border mode | Hand-calculated matrices; narrow/odd images |
 | 7. Gaussian blur | Planned | Normalized kernel generation, sigma/radius controls | Symmetry, normalization, reference outputs |
 | 8. Sobel edges | Planned | Gradient and magnitude rules, clamping | Flat images, known edges, border cases |
 | 9. CI and team integration | Planned | Java build/test workflow, fixtures, PR checklist | Clean clone builds in CI; CUDA suite separate |
@@ -152,12 +152,12 @@ incompatible image formats. Integration happens through reviewed pull requests.
 
 ## Next small commits
 
-1. Add the pixel model and shape/input validation tests.
-2. Define the processing interface and filter contract.
-3. Add sequential grayscale with known-color, alpha, and boundary tests.
-4. Connect grayscale to a background UI task and show original/result previews.
-5. Add PNG result export with round-trip validation.
-6. Update the manual checklist and record the Phase 3 handoff.
+1. Define immutable convolution kernels and validate odd dimensions/finite weights.
+2. Fix convolution orientation, border handling, alpha behavior and rounding.
+3. Implement generic sequential convolution with hand-calculated fixtures.
+4. Generate normalized Gaussian kernels with sigma/radius validation.
+5. Add Sobel gradients and documented magnitude/clamping.
+6. Enable the new filter choices and extend preview/export regression checks.
 
 Split when a change has its own purpose and can be reviewed. Keep tightly coupled
 code and tests together; each pushed commit should build. Commit count is an

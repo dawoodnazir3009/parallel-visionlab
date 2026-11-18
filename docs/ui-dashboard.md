@@ -9,7 +9,7 @@ The HTML remains outside the repository; it is not a runtime dependency.
 | Screen | Available behavior | Availability boundary |
 | --- | --- | --- |
 | Overview | Runtime core count/heap limit, shortcut navigation, sample comparison bars | GPU and processing engine cards show unavailable/not connected |
-| Image Workspace | Asynchronous image loading, dimensions, clear, proportional preview retained across navigation | Filter/backend/thread selectors and processing/export actions are disabled |
+| Image Workspace | Background image loading, sequential grayscale, original/result previews, full-resolution PNG save, clear; state retained across navigation | Selectors fixed to grayscale/sequential; other filters and backends are not connected |
 | Benchmark Lab | Five sample bars, summary cards and sortable comparison table | Every timing is illustrative; no real runs exist |
 | Live Hardware Monitor | Actual OS CPU load when available, JVM heap, detected core inventory, two bounded history charts, pause/resume | No invented GPU/temperature/power/per-core readings; heap is not total RAM |
 | Experiment History | Empty real-history state, sample CSV save dialog and export status/errors | CSV marks every row as sample; no persistence yet |
@@ -46,8 +46,17 @@ Remaining manual walkthrough:
    Cancel the save dialog and test an unwritable destination.
 5. Change Settings selections, apply and navigate away/back; session selections
    remain, but restarting the application resets them as documented.
-6. Confirm processing/save-output controls stay disabled and every chart clearly
-   identifies its sample or real measurement source.
+6. Apply Grayscale after loading; confirm original stays unchanged and output
+   appears. Save/reopen PNG, verify resolution, and test cancellation/failure of
+   the save dialog. Clear and loading a new image must remove stale output.
+7. Confirm processing is disabled without input and saving without output; every
+   chart still identifies its sample or real measurement source.
+
+Processing follow-up on November 18: all 19 tests passed, including pixel
+ownership/shape, known-color rounding, alpha, interruption, PNG round trip and
+JavaFX conversion pipeline checks. The six-page smoke test still passes. These
+checks used code/tests only, without desktop control. Manual filter interaction
+remains pending. Single-execution elapsed time is not a benchmark record.
 
 Known limits: JavaFX 21.0.2 still emits the existing dependency-model warnings.
 The opt-in UI test runs JavaFX on the test classpath and emits a configuration

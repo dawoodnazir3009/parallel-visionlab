@@ -3,18 +3,20 @@
 Java 21 / JavaFX desktop project for comparing sequential, ExecutorService,
 Fork/Join, and custom CUDA image processing. Phase 1 contains only the application
 window. Phase 2 adds asynchronous image loading, a resizable preview, image
-dimensions, clear/reset, and friendly error handling. No processing algorithms
-or measured benchmark results are implemented yet.
+dimensions, clear/reset, and friendly error handling. The first processing engine
+now provides deterministic sequential grayscale and full-resolution PNG export.
+There are no measured benchmark results yet.
 
 The desktop UI now follows the supplied HTML dashboard: a sidebar links Overview,
 Image Workspace, Benchmark Lab, Live Hardware Monitor, Experiment History, and
 Settings. Image loading remains functional. Benchmark cards/bars/table and sample
 CSV export use clearly labeled illustrative data. The monitor reads real system
 CPU load and JVM heap; GPU, temperatures, power and per-core utilization are not
-connected. Settings are session-only preview controls. Filters and output saving
-remain disabled until processing engines are implemented.
+connected. Settings are session-only preview controls. Sequential grayscale and
+PNG saving work; other filters and parallel engines are not implemented yet.
 
-**Current stage:** Phase 2 implemented; next is sequential grayscale processing.
+**Current stage:** Pixel model, sequential grayscale, output preview and PNG export
+implemented (Phases 3-5 core). Next: generic convolution and sequential filters.
 The expanded plan targets a professional **Parallel VisionLab** release in 4-5 weeks,
 with 24 delivery phases.
 See the [complete roadmap and current checkpoint](docs/roadmap.md) and the
@@ -117,6 +119,19 @@ For a manual UI check, navigate to **Image Workspace** first:
 5. Choose a corrupt file using **All files**; confirm an error appears and the
    previous image remains. Then load another valid image.
 6. Click **Clear** to return to the empty workspace.
+7. Load an image again and click **Apply Grayscale**. Confirm the original stays
+   colored and a grayscale result appears below. Navigate away/back to check both.
+8. Click **Save PNG**, reopen the saved file and confirm its original dimensions.
+   Loading another valid image or clearing should remove the old result.
+
+Processing and PNG writing run in background tasks; controls prevent overlapping
+operations. The single-execution time shown after processing includes engine
+allocation/copying, excludes decoding/rendering, and is not a warmed-up benchmark.
+Grayscale uses `(299R + 587G + 114B + 500) / 1000` with integer division and keeps
+alpha. Export uses immutable output pixels, not the scaled preview. JavaFX can
+quantize translucent input RGB during decoding; processing preserves the alpha
+and RGB values supplied by its pixel reader. Very large inputs still need a
+future memory-limit policy.
 
 For dashboard-specific checks and availability details, see
 [the UI handoff](docs/ui-dashboard.md).
