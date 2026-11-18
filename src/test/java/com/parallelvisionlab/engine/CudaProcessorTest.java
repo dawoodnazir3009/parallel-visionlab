@@ -10,6 +10,21 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CudaProcessorTest {
+    @Test @EnabledIfSystemProperty(named="visionlab.cudaTests",matches="true")
+    void fiveBackendRunRecordsGpuEventsAndNonCpuEfficiency()throws Exception {
+        var run=new com.parallelvisionlab.benchmark.BenchmarkRunner(true).run(new PixelImage(19,23,new int[19*23]),"gpu-fixture",
+                new ProcessingRequest(FilterOperation.GAUSSIAN,2,1.2),new com.parallelvisionlab.benchmark.BenchmarkConfig(1,2,2,4),p->{});
+        assertEquals(5,run.measurements().size());
+        for(var result:run.measurements())if(result.backend().gpu()){
+            assertEquals(0,result.workers());assertTrue(Double.isNaN(result.efficiency()));assertTrue(result.kernelMs()>=0);
+            assertEquals(1,result.rgbTolerance());
+        }
+        var directory=java.nio.file.Files.createTempDirectory("visionlab-gpu-archive-test-");
+        try{
+            var archive=new com.parallelvisionlab.benchmark.BenchmarkArchive(directory);archive.save(run);
+            assertEquals(run,archive.load().runs().getFirst());
+        }finally{try(var files=java.nio.file.Files.list(directory)){for(var file:files.toList())java.nio.file.Files.delete(file);}java.nio.file.Files.delete(directory);}
+    }
     @Test void missingExecutableFailsWithoutSilentCpuFallback() {
         var engine=new CudaProcessor(Path.of("definitely-missing-cuda.exe"),false,Duration.ofSeconds(1));
         assertThrows(IllegalStateException.class,()->engine.grayscale(new PixelImage(1,1,new int[]{0})));
