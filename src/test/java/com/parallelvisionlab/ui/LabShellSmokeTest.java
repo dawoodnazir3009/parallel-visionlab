@@ -5,6 +5,9 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Spinner;
+import com.parallelvisionlab.model.FilterOperation;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,17 @@ class LabShellSmokeTest {
                         .filter(button -> button.getText().equals(LabPage.WORKSPACE.title)).findFirst().orElseThrow().fire();
                 assertNotNull(workspace);
                 assertSame(workspace, shell.lookup(".workspace"));
+                @SuppressWarnings("unchecked")
+                ComboBox<FilterOperation> filters = (ComboBox<FilterOperation>) workspace.lookup("#filter-operation");
+                Spinner<?> radius = (Spinner<?>) workspace.lookup("#gaussian-radius");
+                Spinner<?> sigma = (Spinner<?>) workspace.lookup("#gaussian-sigma");
+                assertEquals(4, filters.getItems().size());
+                assertTrue(radius.isDisabled());
+                for (FilterOperation filter : FilterOperation.values()) {
+                    filters.setValue(filter);
+                    assertEquals(filter != FilterOperation.GAUSSIAN, radius.isDisabled());
+                    assertEquals(filter != FilterOperation.GAUSSIAN, sigma.isDisabled());
+                }
                 return null;
             } finally {
                 stage.setScene(null);

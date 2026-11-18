@@ -6,6 +6,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ConvolutionTest {
     private final SequentialProcessor processor = new SequentialProcessor();
+    @Test void convolutionAndSobelHonorInterruption() {
+        var source = new PixelImage(1, 1, new int[]{0});
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(java.util.concurrent.CancellationException.class, () -> processor.convolve(source, ConvolutionKernel.sharpen()));
+            assertThrows(java.util.concurrent.CancellationException.class, () -> processor.sobel(source));
+        } finally { Thread.interrupted(); }
+    }
     @Test void asymmetricKernelFixesOrientationAndReplicatedBorders() {
         var source = new PixelImage(3, 1, new int[]{0xff0a0a0a, 0xff141414, 0xff1e1e1e});
         var right = new ConvolutionKernel(3, new double[]{0, 0, 0, 0, 0, 1, 0, 0, 0});
