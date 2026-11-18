@@ -53,7 +53,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         pages.put(LabPage.WORKSPACE, new WorkspaceView(owner, session));
         pages.put(LabPage.BENCHMARK, new MeasuredBenchmarkView(session));
         pages.put(LabPage.MONITOR, new MonitorView());
-        pages.put(LabPage.HISTORY, new HistoryView(owner));
+        pages.put(LabPage.HISTORY, new HistoryView(owner,session));
         pages.put(LabPage.SETTINGS, new SettingsView());
         pages.put(LabPage.OVERVIEW, new OverviewView(this::navigate));
         navigate(LabPage.OVERVIEW);
@@ -78,6 +78,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
     @Override public void close() {
         ((WorkspaceView) pages.get(LabPage.WORKSPACE)).close();
         ((MeasuredBenchmarkView) pages.get(LabPage.BENCHMARK)).close();
+        ((HistoryView) pages.get(LabPage.HISTORY)).close();
         ((MonitorView) pages.get(LabPage.MONITOR)).close();
     }
 }

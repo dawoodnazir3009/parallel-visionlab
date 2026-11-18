@@ -43,14 +43,18 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
             status.setText("Measuring " + request.operation() + " · " + name + ". Each output is validated exactly.");
             active = new Task<>() {
                 @Override protected BenchmarkRun call() {
-                    return new BenchmarkRunner().run(input,name,request,config,value -> updateProgress(value,1));
+                    var result=new BenchmarkRunner().run(input,name,request,config,value -> updateProgress(value,1));
+                    try {session.archive.save(result);updateMessage("Measured results saved locally. All outputs passed exact validation.");}
+                    catch(java.io.IOException exception){updateMessage("Measured results available this session; saving history failed: "+exception.getMessage());}
+                    return result;
                 }
             };
             progress.progressProperty().bind(active.progressProperty());
             active.setOnSucceeded(done -> {
+                String message=active.getMessage();
                 session.history.add(0,active.getValue());
                 finish(cancel);
-                status.setText("Measured results recorded. All outputs passed exact sequential validation.");
+                status.setText(message);
             });
             active.setOnFailed(done -> {
                 String error = active.getException().getMessage(); finish(cancel);
