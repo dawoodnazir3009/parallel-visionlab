@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -71,13 +72,13 @@ __global__ void sobel(const Pixel* gray,const Pixel* source,Pixel* output,int wi
     }
     int edge=channel(hypot(double(gx),double(gy)));output[i]=(source[i]&0xff000000u)|(edge<<16)|(edge<<8)|edge;
 }
-int main(int argc,char** argv){
+int run(int argc,const std::filesystem::path* argv){
     try{
-        if(argc==2&&std::string(argv[1])=="--device"){
+        if(argc==2&&argv[1]==std::filesystem::path("--device")){
             cudaDeviceProp device;check(cudaGetDeviceProperties(&device,0));std::cout<<device.name<<"\n";return 0;
         }
         if(argc!=4)throw std::runtime_error("Usage: visionlab_cuda input.bin output.bin basic|tiled");
-        std::string variant=argv[3];if(variant!="basic"&&variant!="tiled")throw std::runtime_error("Unknown kernel variant");
+        std::string variant=argv[3].string();if(variant!="basic"&&variant!="tiled")throw std::runtime_error("Unknown kernel variant");
         std::ifstream input(argv[1],std::ios::binary);if(!input)throw std::runtime_error("Input cannot be opened");
         if(read32(input)!=0x50564c31)throw std::runtime_error("Unsupported protocol");
         uint32_t width=read32(input),height=read32(input),operation=read32(input),size=read32(input);
@@ -110,3 +111,8 @@ int main(int argc,char** argv){
         return 0;
     }catch(const std::exception& exception){std::cerr<<exception.what()<<"\n";return 2;}
 }
+#ifdef _WIN32
+int wmain(int argc,wchar_t** argv){std::vector<std::filesystem::path> paths;for(int i=0;i<argc;i++)paths.emplace_back(argv[i]);return run(argc,paths.data());}
+#else
+int main(int argc,char** argv){std::vector<std::filesystem::path> paths;for(int i=0;i<argc;i++)paths.emplace_back(argv[i]);return run(argc,paths.data());}
+#endif

@@ -11,6 +11,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CudaProcessorTest {
     @Test @EnabledIfSystemProperty(named="visionlab.cudaTests",matches="true")
+    void nativeProtocolSupportsSpacesAndUnicodeWindowsPaths()throws Exception {
+        var directory=java.nio.file.Files.createTempDirectory("visionlab unicode-图像-");
+        try{
+            var input=directory.resolve("输入 image.bin");var output=directory.resolve("输出 image.bin");
+            com.parallelvisionlab.service.CudaProtocol.write(input,new PixelImage(1,1,new int[]{0xffff0000}),0,null);
+            Process process=new ProcessBuilder(CudaProcessor.executable().toString(),input.toString(),output.toString(),"basic").start();
+            try{assertTrue(process.waitFor(10,java.util.concurrent.TimeUnit.SECONDS));assertEquals(0,process.exitValue());}
+            finally{if(process.isAlive())process.destroyForcibly();}
+            assertEquals(0xff4c4c4c,com.parallelvisionlab.service.CudaProtocol.read(output,1,1).pixels().argbAt(0,0));
+        }finally{try(var files=java.nio.file.Files.list(directory)){for(var file:files.toList())java.nio.file.Files.delete(file);}java.nio.file.Files.delete(directory);}
+    }
+    @Test @EnabledIfSystemProperty(named="visionlab.cudaTests",matches="true")
     void fiveBackendRunRecordsGpuEventsAndNonCpuEfficiency()throws Exception {
         var run=new com.parallelvisionlab.benchmark.BenchmarkRunner(true).run(new PixelImage(19,23,new int[19*23]),"gpu-fixture",
                 new ProcessingRequest(FilterOperation.GAUSSIAN,2,1.2),new com.parallelvisionlab.benchmark.BenchmarkConfig(1,2,2,4),p->{});
