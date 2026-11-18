@@ -32,6 +32,7 @@ public final class WorkspaceView extends BorderPane {
     private final ComboBox<FilterOperation> operation = new ComboBox<>();
     private final Spinner<Integer> radius = new Spinner<>(1, 7, 2);
     private final Spinner<Double> sigma = new Spinner<>(0.1, 10.0, 1.2, 0.1);
+    private final ProgressIndicator activity = new ProgressIndicator();
     private final Button save = new Button("Save PNG");
     private final ImageView outputPreview = new ImageView();
     private final Label outputEmpty = UiCards.label("Processed image appears here", "muted");
@@ -77,10 +78,15 @@ public final class WorkspaceView extends BorderPane {
         process.getStyleClass().add("primary");
         process.setDisable(true);
         process.setTooltip(new Tooltip("Apply the selected filter to the original image using sequential Java."));
+        activity.setPrefSize(22, 22);
+        activity.setMaxSize(22, 22);
+        activity.setAccessibleText("Image operation in progress");
+        activity.setVisible(false);
+        activity.setManaged(false);
         VBox configuration = UiCards.panel("Processing configuration",
                 field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
                 field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
-                process, UiCards.label("All four sequential filters are available. Borders replicate the nearest pixel; alpha is preserved. Parallel/CUDA engines are not connected.", "sample-notice"));
+                new HBox(12, process, activity), UiCards.label("All four sequential filters are available. Borders replicate the nearest pixel; alpha is preserved. Parallel/CUDA engines are not connected.", "sample-notice"));
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
@@ -208,6 +214,8 @@ public final class WorkspaceView extends BorderPane {
 
     private void setBusy(boolean busy) {
         this.busy = busy;
+        activity.setVisible(busy);
+        activity.setManaged(busy);
         operation.setDisable(busy);
         updateParameterControls();
         open.setDisable(busy);
