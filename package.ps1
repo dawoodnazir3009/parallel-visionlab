@@ -25,6 +25,15 @@ start "" ParallelVisionLab.exe
 ' | Set-Content -LiteralPath $launch -Encoding ASCII
     $native=Join-Path $PSScriptRoot 'native\cuda\build\Release\visionlab_cuda.exe'
     if(Test-Path -LiteralPath $native){Copy-Item -LiteralPath $native -Destination $application}
+    $notices=Join-Path $application 'THIRD_PARTY'
+    New-Item -ItemType Directory -Force -Path $notices | Out-Null
+    foreach($component in @('cuda_cudart','cuda_crt','cuda_nvcc','libnvvm','cccl')) {
+        $unpack=Join-Path $PSScriptRoot ('.tools\unpack-'+$component)
+        if(Test-Path -LiteralPath $unpack){
+            $license=Get-ChildItem -LiteralPath $unpack -Recurse -File | Where-Object Name -eq 'LICENSE' | Select-Object -First 1
+            if($license){Copy-Item -LiteralPath $license.FullName -Destination (Join-Path $notices ($component+'.LICENSE.txt'))}
+        }
+    }
     Push-Location $application
     try {
         & (Join-Path $application 'runtime\bin\java.exe') --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --self-test-cpu
