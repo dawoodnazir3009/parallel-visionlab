@@ -4,8 +4,8 @@
 Bootstraps Parallel VisionLab on Windows x64, verifies it, and launches JavaFX.
 .DESCRIPTION
 Run from a clone or download this file alone. Existing repositories are never
-reset or automatically pulled. -InstallNative adds system CUDA development tools
-through winget (may request elevation/restart); they are optional for the current app.
+reset or automatically pulled. -InstallNative adds verified local CUDA compiler
+components and builds the native engine. Missing C++ tools may request elevation.
 #>
 [CmdletBinding()]
 param(
@@ -95,6 +95,7 @@ try {
 
     $toolsPath = Join-Path $projectRoot '.tools'
     New-Item -ItemType Directory -Force -Path $toolsPath | Out-Null
+    Set-Content -LiteralPath (Join-Path $toolsPath 'java-home.txt') -Value $jdkHome -Encoding UTF8
     $mavenPath = Join-Path $toolsPath 'apache-maven-3.9.11\bin\mvn.cmd'
     if (-not (Test-Path -LiteralPath $mavenPath)) {
         $mavenUrl = 'https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.11/apache-maven-3.9.11-bin.zip'
@@ -106,22 +107,16 @@ try {
     }
 
     if ($InstallNative) {
-        Write-Host 'Installing native development tools; allow vendor elevation prompts. Downloads can be several GB.'
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-        $msvc2022 = $null
+        $msvc = $null
         if (Test-Path -LiteralPath $vswhere) {
-            $msvc2022 = & $vswhere -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            $msvc = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
         }
-        if (-not $msvc2022) {
+        if (-not $msvc) {
             Install-WingetPackage 'Microsoft.VisualStudio.2022.BuildTools' @('--override', '--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --norestart')
         }
-        if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) { Install-WingetPackage 'Kitware.CMake' }
-        $cudaCompilers = @(Get-ChildItem "$env:ProgramFiles\NVIDIA GPU Computing Toolkit\CUDA\v*\bin\nvcc.exe" -ErrorAction SilentlyContinue)
-        if (-not (Get-Command nvcc -ErrorAction SilentlyContinue) -and $cudaCompilers.Count -eq 0) {
-            Install-WingetPackage 'Nvidia.CUDA'
-        }
-        Write-Host 'Native tools installed. Reopen a VS 2022 x64 developer shell after any requested reboot.'
-        Write-Host 'CUDA host-compiler compatibility and a real kernel build still require validation in the CUDA phase.'
+        Invoke-Checked 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $projectRoot 'install-cuda.ps1'))
+        Invoke-Checked 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $projectRoot 'build-cuda.ps1'))
     }
 
     Push-Location $projectRoot
