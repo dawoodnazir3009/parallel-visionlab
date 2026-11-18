@@ -104,7 +104,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
                 field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
                 field("Fork/Join leaf rows", threshold),
                 field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
-                new HBox(12, process, cancel, activity), UiCards.label("All three Java CPU backends support every filter. CUDA is not connected yet.", "sample-notice"));
+                new HBox(12, process, cancel, activity), UiCards.label("All three Java CPU backends support every filter. CUDA backends appear when the native executable is built and require an NVIDIA driver.", "sample-notice"));
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
