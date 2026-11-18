@@ -61,12 +61,17 @@ class LabShellSmokeTest {
                 @SuppressWarnings("unchecked")
                 ComboBox<ExecutionBackend> backend = (ComboBox<ExecutionBackend>) workspace.lookup("#execution-backend");
                 ComboBox<?> threads = (ComboBox<?>) workspace.lookup("#worker-threads");
-                assertEquals(2, backend.getItems().size());
+                assertEquals(3, backend.getItems().size());
                 assertTrue(threads.isDisabled());
                 backend.setValue(ExecutionBackend.EXECUTOR);
                 assertFalse(threads.isDisabled());
                 backend.setValue(ExecutionBackend.SEQUENTIAL);
                 assertTrue(threads.isDisabled());
+                Spinner<?> threshold = (Spinner<?>) workspace.lookup("#forkjoin-threshold");
+                assertTrue(threshold.isDisabled());
+                backend.setValue(ExecutionBackend.FORK_JOIN);
+                assertFalse(threshold.isDisabled());
+                assertFalse(threads.isDisabled());
                 return null;
             } finally {
                 shell.close();

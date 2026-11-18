@@ -37,6 +37,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private Task<?> activeTask;
     private boolean closed;
     private final Spinner<Integer> radius = new Spinner<>(1, 7, 2);
+    private final Spinner<Integer> threshold = new Spinner<>(1, 2048, 32);
     private final Spinner<Double> sigma = new Spinner<>(0.1, 10.0, 1.2, 0.1);
     private final ProgressIndicator activity = new ProgressIndicator();
     private final Button save = new Button("Save PNG");
@@ -74,6 +75,8 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         operation.setMaxWidth(Double.MAX_VALUE);
         operation.setId("filter-operation");
         radius.setId("gaussian-radius");
+        threshold.setId("forkjoin-threshold");
+        threshold.setMaxWidth(Double.MAX_VALUE);
         sigma.setId("gaussian-sigma");
         radius.setMaxWidth(Double.MAX_VALUE);
         sigma.setMaxWidth(Double.MAX_VALUE);
@@ -93,8 +96,9 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         activity.setManaged(false);
         VBox configuration = UiCards.panel("Processing configuration",
                 field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
+                field("Fork/Join leaf rows", threshold),
                 field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
-                new HBox(12, process, activity), UiCards.label("Sequential and ExecutorService support all four filters. Thread counts apply to multithreading. Fork/Join and CUDA are not connected.", "sample-notice"));
+                new HBox(12, process, activity), UiCards.label("All three Java CPU backends support every filter. CUDA is not connected yet.", "sample-notice"));
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
@@ -114,6 +118,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         sigma.valueProperty().addListener((observable, before, after) -> configurationChanged());
         backend.valueProperty().addListener((observable, before, after) -> configurationChanged());
         threads.valueProperty().addListener((observable, before, after) -> configurationChanged());
+        threshold.valueProperty().addListener((observable, before, after) -> configurationChanged());
         updateParameterControls();
         clear.setOnAction(event -> {
             preview.setImage(null);
@@ -180,10 +185,11 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         int workers = selectedBackend == ExecutionBackend.SEQUENTIAL ? 1 :
                 (threads.getValue().equals("Automatic") ? ProcessingEngines.automaticWorkers() : Integer.parseInt(threads.getValue()));
         String execution = selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
+        int leafRows = threshold.getValue();
         status.setText("Applying " + request.operation() + " using " + execution + "...");
         Task<ProcessedImage> task = new Task<>() {
             @Override protected ProcessedImage call() {
-                var engine = engines.select(selectedBackend, workers);
+                var engine = engines.select(selectedBackend, workers, leafRows);
                 long start = System.nanoTime();
                 PixelImage pixels = engine.process(input, request);
                 long elapsed = System.nanoTime() - start;
@@ -241,7 +247,8 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private void updateParameterControls() {
-        threads.setDisable(busy || backend.getValue() != ExecutionBackend.EXECUTOR);
+        threads.setDisable(busy || backend.getValue() == ExecutionBackend.SEQUENTIAL);
+        threshold.setDisable(busy || backend.getValue() != ExecutionBackend.FORK_JOIN);
         boolean unavailable = busy || operation.getValue() != FilterOperation.GAUSSIAN;
         radius.setDisable(unavailable);
         sigma.setDisable(unavailable);
