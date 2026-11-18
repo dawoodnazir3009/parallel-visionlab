@@ -19,7 +19,7 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-/** Background sequential filters and full-resolution PNG export in the dashboard workspace. */
+/** Background sequential/multithreaded filters and full-resolution PNG export. */
 public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final ImageLoader loader = new ImageLoader();
     private final ImageView preview = new ImageView();
