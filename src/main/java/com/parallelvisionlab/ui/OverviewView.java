@@ -19,7 +19,7 @@ final class OverviewView extends VBox {
                         UiCards.metric("LOGICAL PROCESSORS", String.valueOf(Runtime.getRuntime().availableProcessors()), "Available to this JVM"),
                         UiCards.metric("GPU TELEMETRY", "Unavailable", "Native monitor not connected"),
                         UiCards.metric("JVM HEAP LIMIT", String.format(java.util.Locale.ROOT, "%.1f GB", Runtime.getRuntime().maxMemory() / 1073741824.0), "Not total system RAM"),
-                        UiCards.metric("PROCESSING ENGINES", "1 available", "Sequential grayscale")),
+                        UiCards.metric("PROCESSING ENGINES", "1 available", "4 sequential filters")),
                 UiCards.columns(
                         UiCards.panel("Processing workspace", UiCards.empty("Start a new image experiment", "Load an image and inspect it at its original resolution."), workspace),
                         UiCards.panel("Illustrative performance comparison", BenchmarkView.bars(),

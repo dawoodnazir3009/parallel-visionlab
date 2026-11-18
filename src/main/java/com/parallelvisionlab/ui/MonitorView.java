@@ -43,7 +43,7 @@ final class MonitorView extends VBox {
                         UiCards.panel("JVM heap history · % of maximum", chart(heapSamples, "Heap %"))),
                 UiCards.panel("Logical processor inventory", cores(),
                         UiCards.label("Processor count is detected. Individual core loads are unavailable; no per-core values are simulated.", "muted")),
-                UiCards.panel("Workload inspector", UiCards.label("Image loader: on demand · Sequential grayscale: available · CUDA: not connected", "muted")));
+                UiCards.panel("Workload inspector", UiCards.label("Image loader: on demand · Sequential filters: 4 available · CUDA: not connected", "muted")));
         sceneProperty().addListener((observable, before, after) -> {
             if (after == null) { timer.stop(); } else if (!paused) { timer.play(); }
         });
