@@ -9,7 +9,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 /** Persistent page instances retain loaded images and local selections during navigation. */
-public final class LabShell extends BorderPane {
+public final class LabShell extends BorderPane implements AutoCloseable {
     private final EnumMap<LabPage, Node> pages = new EnumMap<>(LabPage.class);
     private final EnumMap<LabPage, Button> links = new EnumMap<>(LabPage.class);
     private final Label title = UiCards.label("", "page-title");
@@ -72,5 +72,10 @@ public final class LabShell extends BorderPane {
             if (key == page) { button.getStyleClass().add("active"); }
         });
         scroll.setVvalue(0);
+    }
+
+    @Override public void close() {
+        ((WorkspaceView) pages.get(LabPage.WORKSPACE)).close();
+        ((MonitorView) pages.get(LabPage.MONITOR)).close();
     }
 }

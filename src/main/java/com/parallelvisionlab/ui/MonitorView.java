@@ -9,7 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
-final class MonitorView extends VBox {
+final class MonitorView extends VBox implements AutoCloseable {
     private final Label cpu = UiCards.label("Waiting…", "metric-value");
     private final Label heap = UiCards.label("Waiting…", "metric-value");
     private final ProgressBar cpuBar = new ProgressBar(0);
@@ -93,4 +93,6 @@ final class MonitorView extends VBox {
         series.getData().add(new XYChart.Data<>(seconds, value));
         if (series.getData().size() > 60) { series.getData().removeFirst(); }
     }
+
+    @Override public void close() { timer.stop(); }
 }

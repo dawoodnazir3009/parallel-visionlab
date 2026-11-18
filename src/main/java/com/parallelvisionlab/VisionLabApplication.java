@@ -5,12 +5,14 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import com.parallelvisionlab.ui.LabShell;
 
-/** JavaFX entry point; processing engines will be added in later phases. */
+/** JavaFX entry point and owner of application resource cleanup. */
 public final class VisionLabApplication extends Application {
+    private LabShell shell;
     @Override
     public void start(Stage stage) {
         stage.setTitle("Parallel VisionLab");
-        Scene scene = new Scene(new LabShell(stage), 1280, 840);
+        shell = new LabShell(stage);
+        Scene scene = new Scene(shell, 1280, 840);
         scene.getStylesheets().add(getClass().getResource("/com/parallelvisionlab/workspace.css").toExternalForm());
         stage.setScene(scene);
         stage.setMinWidth(1000);
@@ -20,5 +22,9 @@ public final class VisionLabApplication extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    @Override public void stop() {
+        if (shell != null) { shell.close(); }
     }
 }
