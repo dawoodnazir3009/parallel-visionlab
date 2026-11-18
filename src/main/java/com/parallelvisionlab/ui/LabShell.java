@@ -16,6 +16,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
     private final Label subtitle = UiCards.label("", "muted");
     private final VBox content = new VBox(22);
     private final ScrollPane scroll = new ScrollPane(content);
+    private final LabSession session = new LabSession();
 
     public LabShell(Stage owner) {
         VBox sidebar = new VBox(7);
@@ -49,8 +50,8 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.getStyleClass().add("page-scroll");
         setCenter(scroll);
-        pages.put(LabPage.WORKSPACE, new WorkspaceView(owner));
-        pages.put(LabPage.BENCHMARK, new BenchmarkView());
+        pages.put(LabPage.WORKSPACE, new WorkspaceView(owner, session));
+        pages.put(LabPage.BENCHMARK, new MeasuredBenchmarkView(session));
         pages.put(LabPage.MONITOR, new MonitorView());
         pages.put(LabPage.HISTORY, new HistoryView(owner));
         pages.put(LabPage.SETTINGS, new SettingsView());
@@ -76,6 +77,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
 
     @Override public void close() {
         ((WorkspaceView) pages.get(LabPage.WORKSPACE)).close();
+        ((MeasuredBenchmarkView) pages.get(LabPage.BENCHMARK)).close();
         ((MonitorView) pages.get(LabPage.MONITOR)).close();
     }
 }

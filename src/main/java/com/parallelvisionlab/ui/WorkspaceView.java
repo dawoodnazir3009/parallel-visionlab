@@ -22,6 +22,7 @@ import javafx.stage.Stage;
 /** Background sequential/multithreaded filters and full-resolution PNG export. */
 public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final ImageLoader loader = new ImageLoader();
+    private final LabSession session;
     private final ImageView preview = new ImageView();
     private final Label details = new Label("No image selected");
     private final Label status = new Label("Ready. Open an image to get started.");
@@ -50,7 +51,13 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private boolean busy;
 
     public WorkspaceView(Stage owner) {
+        this(owner, new LabSession());
+    }
+
+    WorkspaceView(Stage owner, LabSession session) {
         this.owner = owner;
+        this.session = session;
+        session.busy.addListener((observable, before, after) -> updateBusy(after));
         getStyleClass().add("workspace");
         clear.setDisable(true);
         open.getStyleClass().add("primary");
@@ -123,6 +130,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         clear.setOnAction(event -> {
             preview.setImage(null);
             source = null;
+            session.input.set(null);
             resetOutput();
             empty.setVisible(true);
             details.setText("No image selected");
@@ -168,6 +176,8 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
             Image image = loaded.preview();
             source = loaded.pixels();
             sourceName = file.getName();
+            session.input.set(source);
+            session.sourceName.set(sourceName);
             resetOutput();
             preview.setImage(image);
             empty.setVisible(false);
@@ -234,6 +244,11 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private void setBusy(boolean busy) {
+        session.busy.set(busy);
+        updateBusy(busy);
+    }
+
+    private void updateBusy(boolean busy) {
         this.busy = busy;
         activity.setVisible(busy);
         activity.setManaged(busy);
@@ -255,6 +270,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private void configurationChanged() {
+        session.request.set(new ProcessingRequest(operation.getValue(), radius.getValue(), sigma.getValue()));
         resetOutput();
         updateParameterControls();
         if (source != null) { status.setText("Configuration changed. Apply Filter to generate a new result from the original."); }
