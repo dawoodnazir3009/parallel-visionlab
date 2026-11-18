@@ -16,11 +16,16 @@ final class LabSession {
     final ObjectProperty<ProcessingRequest> request = new SimpleObjectProperty<>(new ProcessingRequest(FilterOperation.GRAYSCALE,2,1.2));
     final BooleanProperty busy = new SimpleBooleanProperty();
     final ObservableList<BenchmarkRun> history = FXCollections.observableArrayList();
-    final BenchmarkArchive archive = new BenchmarkArchive(Path.of(".tools","experiments"));
+    final BenchmarkArchive archive;
     final StringProperty archiveStatus = new SimpleStringProperty("");
-    final BenchmarkPreferences preferenceStore=new BenchmarkPreferences(Path.of(".tools","preferences.properties"));
+    final BenchmarkPreferences preferenceStore;
     final ObjectProperty<BenchmarkConfig> preferences=new SimpleObjectProperty<>(new BenchmarkConfig(3,10,com.parallelvisionlab.service.ProcessingEngines.automaticWorkers(),32));
     LabSession() {
+        this(Path.of(".tools"));
+    }
+    LabSession(Path dataDirectory) {
+        archive=new BenchmarkArchive(dataDirectory.resolve("experiments"));
+        preferenceStore=new BenchmarkPreferences(dataDirectory.resolve("preferences.properties"));
         try {preferences.set(preferenceStore.load(preferences.get()));}catch(java.io.IOException exception){archiveStatus.set(exception.getMessage());}
         try {
             var loaded=archive.load();history.setAll(loaded.runs());

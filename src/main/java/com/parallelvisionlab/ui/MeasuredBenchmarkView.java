@@ -31,6 +31,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
             workers.getValueFactory().setValue(after.workers());threshold.getValueFactory().setValue(after.leafRows());
         });
         CheckBox includeCuda=new CheckBox("Include CUDA (process-bridge timings)");
+        includeCuda.setId("include-cuda");
         includeCuda.setSelected(com.parallelvisionlab.engine.CudaProcessor.available());
         includeCuda.disableProperty().bind(session.busy.or(new javafx.beans.property.SimpleBooleanProperty(!com.parallelvisionlab.engine.CudaProcessor.available())));
         Button run = new Button("Run Backend Comparison");

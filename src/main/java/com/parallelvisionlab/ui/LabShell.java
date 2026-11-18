@@ -16,9 +16,13 @@ public final class LabShell extends BorderPane implements AutoCloseable {
     private final Label subtitle = UiCards.label("", "muted");
     private final VBox content = new VBox(22);
     private final ScrollPane scroll = new ScrollPane(content);
-    private final LabSession session = new LabSession();
+    private final LabSession session;
 
     public LabShell(Stage owner) {
+        this(owner,new LabSession());
+    }
+    LabShell(Stage owner,LabSession session) {
+        this.session=session;
         VBox sidebar = new VBox(7);
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(210);
