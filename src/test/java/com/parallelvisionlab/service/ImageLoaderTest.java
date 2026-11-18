@@ -9,6 +9,19 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ImageLoaderTest {
+    @Test void animatedGifUsesOnlyTheFirstFrame()throws Exception {
+        Path file=directory.resolve("animated.gif");
+        var writer=javax.imageio.ImageIO.getImageWritersByFormatName("gif").next();
+        try(var output=javax.imageio.ImageIO.createImageOutputStream(file.toFile())){
+            writer.setOutput(output);writer.prepareWriteSequence(null);
+            for(int color:new int[]{0xffff0000,0xff0000ff}){
+                var frame=new java.awt.image.BufferedImage(1,1,java.awt.image.BufferedImage.TYPE_INT_ARGB);frame.setRGB(0,0,color);
+                writer.writeToSequence(new javax.imageio.IIOImage(frame,null,null),null);
+            }
+            writer.endWriteSequence();
+        }finally{writer.dispose();}
+        assertEquals(0xffff0000,loader.load(file).getPixelReader().getArgb(0,0));
+    }
     @Test void rejectsOversizedHeadersBeforePixelAllocation() {
         assertThrows(IOException.class,()->ImageLoader.validateDimensions(100000,100000,4L*1024*1024*1024));
         assertThrows(IOException.class,()->ImageLoader.validateDimensions(1024,1024,1024));

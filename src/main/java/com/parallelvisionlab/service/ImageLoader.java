@@ -16,7 +16,13 @@ public final class ImageLoader {
             var readers=ImageIO.getImageReaders(input);
             if(!readers.hasNext())throw new IOException("Unsupported or corrupt image. Use PNG, JPEG, BMP or GIF.");
             var reader=readers.next();
-            try {reader.setInput(input);validateDimensions(reader.getWidth(0),reader.getHeight(0),Runtime.getRuntime().maxMemory());}
+            try {
+                reader.setInput(input);validateDimensions(reader.getWidth(0),reader.getHeight(0),Runtime.getRuntime().maxMemory());
+                if(reader.getFormatName().equalsIgnoreCase("gif")){
+                    var first=reader.read(0);int width=first.getWidth(),height=first.getHeight();
+                    return PixelImages.toFx(new com.parallelvisionlab.model.PixelImage(width,height,first.getRGB(0,0,width,height,null,0,width)));
+                }
+            }
             finally{reader.dispose();}
         }
         try (InputStream input = Files.newInputStream(path)) {
