@@ -24,6 +24,7 @@ public final class BenchmarkArchive {
         p.setProperty("warmups",""+run.config().warmups()); p.setProperty("iterations",""+run.config().iterations());
         p.setProperty("workers",""+run.config().workers()); p.setProperty("leafRows",""+run.config().leafRows());
         p.setProperty("java",run.javaVersion()); p.setProperty("os",run.operatingSystem());
+        p.setProperty("hardware",run.hardwareSummary());
         p.setProperty("count",""+run.measurements().size());
         for(int i=0;i<run.measurements().size();i++) {
             var m=run.measurements().get(i);String key="m."+i+".";
@@ -76,7 +77,7 @@ public final class BenchmarkArchive {
                 Objects.requireNonNull(p.getProperty("hash")),width,height,
                 new ProcessingRequest(FilterOperation.valueOf(p.getProperty("operation")),integer(p,"radius"),Double.parseDouble(p.getProperty("sigma"))),
                 new BenchmarkConfig(integer(p,"warmups"),integer(p,"iterations"),integer(p,"workers"),integer(p,"leafRows")),rows,
-                Objects.requireNonNull(p.getProperty("java")),Objects.requireNonNull(p.getProperty("os")));
+                Objects.requireNonNull(p.getProperty("java")),Objects.requireNonNull(p.getProperty("os")),p.getProperty("hardware","not recorded"));
     }
     private static int integer(Properties p,String key){return Integer.parseInt(p.getProperty(key));}
     private static double event(Properties p,String key)throws IOException{double value=Double.parseDouble(p.getProperty(key,"0"));if(!Double.isFinite(value)||value<0)throw new IOException("Invalid event timing");return value;}

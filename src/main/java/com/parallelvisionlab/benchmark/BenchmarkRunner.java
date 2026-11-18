@@ -58,7 +58,9 @@ public final class BenchmarkRunner {
                     median(eventTimes.get(i)[0]),median(eventTimes.get(i)[1]),median(eventTimes.get(i)[2]),backends[i].gpu()?1:0));
         }
         return new BenchmarkRun(UUID.randomUUID().toString(), Instant.now(), name, hash(source), source.width(), source.height(),
-                request, config, measurements, System.getProperty("java.version"), System.getProperty("os.name") + " " + System.getProperty("os.arch"));
+                request, config, measurements, System.getProperty("java.version"), System.getProperty("os.name") + " " + System.getProperty("os.arch"),
+                "logical_processors="+Runtime.getRuntime().availableProcessors()+"; CPU="+System.getenv().getOrDefault("PROCESSOR_IDENTIFIER",System.getProperty("os.arch"))+
+                        "; GPU="+(includeCuda?NvidiaTelemetry.sample().map(NvidiaTelemetry.Snapshot::name).orElse("unavailable"):"not included"));
     }
 
     static double median(double[] sorted) {
