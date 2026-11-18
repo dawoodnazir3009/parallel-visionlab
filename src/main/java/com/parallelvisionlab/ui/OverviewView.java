@@ -29,13 +29,13 @@ final class OverviewView extends VBox {
         getChildren().addAll(
                 UiCards.columns(
                         UiCards.metric("LOGICAL PROCESSORS", String.valueOf(Runtime.getRuntime().availableProcessors()), "Available to this JVM"),
-                        UiCards.metric("GPU TELEMETRY", "Unavailable", "Native monitor not connected"),
+                        UiCards.metric("GPU PROCESSING", com.parallelvisionlab.engine.CudaProcessor.available()?"CUDA ready":"Not built", "See Live Monitor for driver telemetry"),
                         UiCards.metric("JVM HEAP LIMIT", String.format(java.util.Locale.ROOT, "%.1f GB", Runtime.getRuntime().maxMemory() / 1073741824.0), "Not total system RAM"),
-                        UiCards.metric("PROCESSING ENGINES", "3 available", "Sequential · Executor · Fork/Join")),
+                        UiCards.metric("PROCESSING ENGINES", com.parallelvisionlab.engine.CudaProcessor.available()?"5 available":"3 available", "3 Java engines + optional basic/tiled CUDA")),
                 UiCards.columns(
                         UiCards.panel("Processing workspace", UiCards.empty("Start a new image experiment", "Load an image and inspect it at its original resolution."), workspace),
                         UiCards.panel("Latest measured CPU comparison", measured,
                                 UiCards.label("Measured medians from validated experiments. Lower is faster.", "muted"), benchmark)),
-                UiCards.panel("Hardware telemetry", UiCards.label("Inspect real JVM resources and backend availability. GPU measurements are not connected yet.", "muted"), monitor));
+                UiCards.panel("Hardware telemetry", UiCards.label("Inspect actual CPU/JVM resources and optional NVIDIA load, VRAM, power and temperature.", "muted"), monitor));
     }
 }

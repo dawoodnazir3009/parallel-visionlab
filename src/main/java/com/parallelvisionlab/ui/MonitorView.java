@@ -1,6 +1,8 @@
 package com.parallelvisionlab.ui;
 
 import com.parallelvisionlab.service.RuntimeSnapshot;
+import com.parallelvisionlab.service.NvidiaTelemetry;
+import java.util.concurrent.*;
 import java.util.Locale;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -12,10 +14,19 @@ import javafx.util.Duration;
 final class MonitorView extends VBox implements AutoCloseable {
     private final Label cpu = UiCards.label("Waiting…", "metric-value");
     private final Label heap = UiCards.label("Waiting…", "metric-value");
+    private final Label gpuLoad=UiCards.label("Waiting…","metric-value");
+    private final Label gpuPower=UiCards.label("—","metric-value");
+    private final Label gpuMemory=UiCards.label("—","metric-value");
+    private final Label gpuTemperature=UiCards.label("—","metric-value");
+    private final Label gpuName=UiCards.label("NVIDIA telemetry has not sampled yet","muted");
     private final ProgressBar cpuBar = new ProgressBar(0);
     private final ProgressBar heapBar = new ProgressBar(0);
     private final XYChart.Series<Number, Number> cpuSamples = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> heapSamples = new XYChart.Series<>();
+    private final XYChart.Series<Number,Number> gpuSamples=new XYChart.Series<>();
+    private final ScheduledExecutorService hardware=Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().daemon(true).name("visionlab-gpu-monitor").factory());
+    private ScheduledFuture<?> gpuPoll;
+    private boolean closed;
     private final Timeline timer;
     private int seconds;
     private boolean paused;
@@ -28,24 +39,26 @@ final class MonitorView extends VBox implements AutoCloseable {
         pause.setOnAction(event -> {
             paused = !paused;
             pause.setText(paused ? "Resume" : "Pause");
-            if (paused) { timer.pause(); } else { timer.play(); }
+            if (paused) { timer.pause();stopGpu(); } else { timer.play();startGpu(); }
         });
         cpuBar.setMaxWidth(Double.MAX_VALUE);
         heapBar.setMaxWidth(Double.MAX_VALUE);
         heapBar.getStyleClass().add("backend-2");
         getChildren().addAll(
-                UiCards.label("LIVE OS/JVM DATA · GPU, thermals, power and per-core telemetry are not connected", "sample-notice"), pause,
+                UiCards.label("LIVE OS/JVM + NVIDIA DRIVER DATA · Unsupported sensors show unavailable values", "sample-notice"), pause,
                 UiCards.columns(UiCards.panel("SYSTEM CPU LOAD", cpu, cpuBar),
                         UiCards.panel("JVM HEAP USED", heap, heapBar),
-                        UiCards.metric("GPU LOAD / POWER", "Unavailable", "Native provider required"),
+                        UiCards.panel("GPU LOAD",gpuLoad,gpuName),
                         UiCards.metric("LOGICAL PROCESSORS", String.valueOf(Runtime.getRuntime().availableProcessors()), "Detected by the JVM")),
                 UiCards.columns(UiCards.panel("CPU utilization history · %", chart(cpuSamples, "CPU %")),
                         UiCards.panel("JVM heap history · % of maximum", chart(heapSamples, "Heap %"))),
+                UiCards.panel("GPU utilization history · %",chart(gpuSamples,"GPU %")),
+                UiCards.columns(UiCards.panel("GPU VRAM USED / TOTAL",gpuMemory),UiCards.panel("GPU POWER",gpuPower),UiCards.panel("GPU TEMPERATURE",gpuTemperature)),
                 UiCards.panel("Logical processor inventory", cores(),
                         UiCards.label("Processor count is detected. Individual core loads are unavailable; no per-core values are simulated.", "muted")),
-                UiCards.panel("Workload inspector", UiCards.label("Image loader: on demand · Sequential + ExecutorService: available · CUDA: not connected", "muted")));
+                UiCards.panel("Workload inspector", UiCards.label("3 Java CPU engines · CUDA executable: "+(com.parallelvisionlab.engine.CudaProcessor.available()?"available":"not built")+" · Per-core load and CPU power/temperature: unavailable", "muted")));
         sceneProperty().addListener((observable, before, after) -> {
-            if (after == null) { timer.stop(); } else if (!paused) { timer.play(); }
+            if (after == null) { timer.stop();stopGpu(); } else if (!paused) { timer.play();startGpu(); }
         });
         sample();
     }
@@ -94,5 +107,23 @@ final class MonitorView extends VBox implements AutoCloseable {
         if (series.getData().size() > 60) { series.getData().removeFirst(); }
     }
 
-    @Override public void close() { timer.stop(); }
+    private void startGpu(){
+        if(closed||paused||getScene()==null||(gpuPoll!=null&&!gpuPoll.isDone()))return;
+        gpuPoll=hardware.scheduleWithFixedDelay(()->{
+            var reading=NvidiaTelemetry.sample();
+            javafx.application.Platform.runLater(()->{
+                if(closed||paused||getScene()==null)return;
+                if(reading.isEmpty()){
+                    gpuLoad.setText("Unavailable");gpuName.setText("nvidia-smi unavailable");gpuPower.setText("—");gpuMemory.setText("—");gpuTemperature.setText("—");return;
+                }
+                var value=reading.get();gpuName.setText(value.name());gpuLoad.setText(sensor(value.utilization(),"%"));
+                gpuPower.setText(sensor(value.watts()," W"));gpuTemperature.setText(sensor(value.temperature()," °C"));
+                gpuMemory.setText(sensor(value.usedMiB()," MiB")+" / "+sensor(value.totalMiB()," MiB"));
+                if(Double.isFinite(value.utilization()))append(gpuSamples,value.utilization());
+            });
+        },0,2,TimeUnit.SECONDS);
+    }
+    private String sensor(double value,String unit){return Double.isFinite(value)?String.format(Locale.ROOT,"%.0f",value)+unit:"Unavailable";}
+    private void stopGpu(){if(gpuPoll!=null){gpuPoll.cancel(true);gpuPoll=null;}}
+    @Override public void close() {closed=true;timer.stop();stopGpu();hardware.shutdownNow();}
 }

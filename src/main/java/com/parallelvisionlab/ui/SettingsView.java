@@ -27,7 +27,7 @@ final class SettingsView extends VBox {
                 UiCards.panel("Detected runtime",field("Java runtime",System.getProperty("java.version")),
                         field("Operating system",System.getProperty("os.name")+" · "+System.getProperty("os.arch")),
                         field("Logical processors",""+Runtime.getRuntime().availableProcessors()),
-                        field("GPU processing","CUDA executable not connected yet"),
+                        field("GPU processing",com.parallelvisionlab.engine.CudaProcessor.available()?"Basic + tiled CUDA executable available":"Run install-cuda.ps1 and build-cuda.ps1 to enable"),
                         UiCards.label("Runtime values are detected. CPU benchmarks use engine wall-clock timing, not simulated telemetry.","muted")),
                 UiCards.panel("Benchmark preferences",control("Warm-up runs",warmups),control("Measured iterations",iterations),
                         control("CPU workers",workers),control("Fork/Join leaf rows",leafRows),apply,feedback)));
