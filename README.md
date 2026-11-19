@@ -17,7 +17,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 This installs missing Git/JDK 21, clones the repository, downloads checksum-verified
 Maven, builds/tests and launches the app. Requires Windows x64, PowerShell 5.1+,
 internet, and winget if Git/Java is missing. Existing checkouts are preserved,
-without an automatic pull/reset. Python/pip is unnecessary; requirements.txt is
+without an automatic pull/reset. Source copies without a .git directory are also
+recognized and built in place. Python/pip is unnecessary; requirements.txt is
 intentionally comments only.
 
 For GPU development/build as well:

@@ -68,7 +68,7 @@ try {
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git was installed; reopen PowerShell and rerun setup.' }
 
     if ((Test-Path -LiteralPath (Join-Path $PSScriptRoot 'pom.xml')) -and
-        (Test-Path -LiteralPath (Join-Path $PSScriptRoot '.git'))) {
+        (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'src\main\java\com\parallelvisionlab\VisionLabLauncher.java'))) {
         $projectRoot = $PSScriptRoot
     } else {
         $projectRoot = [IO.Path]::GetFullPath($Destination)
