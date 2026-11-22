@@ -11,7 +11,7 @@ final class SettingsView extends VBox {
         var preferences=session.preferences.get();
         Spinner<Integer> warmups=new Spinner<>(0,20,preferences.warmups());
         Spinner<Integer> iterations=new Spinner<>(1,100,preferences.iterations());
-        Spinner<Integer> workers=new Spinner<>(1,256,preferences.workers());
+        Spinner<Integer> workers=new Spinner<>(1,8,preferences.workers());
         Spinner<Integer> leafRows=new Spinner<>(1,2048,preferences.leafRows());
         Label feedback=UiCards.label("Preferences are saved locally under .tools/preferences.properties.","muted");
         Button apply=new Button("Save Benchmark Preferences");apply.getStyleClass().add("primary");
@@ -27,6 +27,7 @@ final class SettingsView extends VBox {
                 UiCards.panel("Detected runtime",field("Java runtime",System.getProperty("java.version")),
                         field("Operating system",System.getProperty("os.name")+" · "+System.getProperty("os.arch")),
                         field("Logical processors",""+Runtime.getRuntime().availableProcessors()),
+                        field("Application CPU limit",com.parallelvisionlab.service.CpuLimits.affinityStatus()),
                         field("GPU processing",com.parallelvisionlab.engine.CudaProcessor.available()?"Basic + tiled CUDA executable available":"Run install-cuda.ps1 and build-cuda.ps1 to enable"),
                         UiCards.label("Runtime values are detected. CPU benchmarks use engine wall-clock timing, not simulated telemetry.","muted")),
                 UiCards.panel("Benchmark preferences",control("Warm-up runs",warmups),control("Measured iterations",iterations),
