@@ -14,7 +14,7 @@ public final class CudaProtocol {
             out.writeInt(0x50564c31);out.writeInt(image.width());out.writeInt(image.height());out.writeInt(operation);
             int size=kernel==null?1:kernel.size();out.writeInt(size);
             for(int y=0;y<size;y++)for(int x=0;x<size;x++)out.writeDouble(kernel==null?1:kernel.weightAt(x,y));
-            for(int pixel:image.copyPixels())out.writeInt(pixel);
+            for(int y=0;y<image.height();y++)for(int x=0;x<image.width();x++)out.writeInt(image.argbAt(x,y));
         }
     }
     public static Result read(Path file,int width,int height)throws IOException {
