@@ -14,6 +14,9 @@ import javafx.util.Duration;
 final class MonitorView extends VBox implements AutoCloseable {
     private final Label cpu = UiCards.label("Waiting…", "metric-value");
     private final Label heap = UiCards.label("Waiting…", "metric-value");
+    private final Label ram = UiCards.label("Waiting…", "live-value");
+    private final ProgressBar ramBar = new ProgressBar(0);
+    private final XYChart.Series<Number, Number> ramSamples = new XYChart.Series<>();
     private final Label gpuLoad=UiCards.label("Waiting…","metric-value");
     private final Label gpuPower=UiCards.label("—","metric-value");
     private final Label gpuMemory=UiCards.label("—","metric-value");
@@ -43,19 +46,21 @@ final class MonitorView extends VBox implements AutoCloseable {
         });
         cpuBar.setMaxWidth(Double.MAX_VALUE);
         heapBar.setMaxWidth(Double.MAX_VALUE);
+        ramBar.setMaxWidth(Double.MAX_VALUE);
+        ram.setId("monitor-live-ram");
         heapBar.getStyleClass().add("backend-2");
         getChildren().addAll(
                 UiCards.label("LIVE OS/JVM + NVIDIA DRIVER DATA · Unsupported sensors show unavailable values", "sample-notice"), pause,
                 UiCards.columns(UiCards.panel("SYSTEM CPU LOAD", cpu, cpuBar),
+                        UiCards.panel("SYSTEM RAM USED / TOTAL", ram, ramBar),
                         UiCards.panel("JVM HEAP USED", heap, heapBar),
-                        UiCards.panel("GPU LOAD",gpuLoad,gpuName),
-                        UiCards.metric("LOGICAL PROCESSORS", String.valueOf(Runtime.getRuntime().availableProcessors()), "Detected by the JVM")),
+                        UiCards.panel("GPU LOAD",gpuLoad,gpuName)),
                 UiCards.columns(UiCards.panel("CPU utilization history · %", chart(cpuSamples, "CPU %")),
-                        UiCards.panel("JVM heap history · % of maximum", chart(heapSamples, "Heap %"))),
-                UiCards.panel("GPU utilization history · %",chart(gpuSamples,"GPU %")),
+                        UiCards.panel("System RAM history · % used", chart(ramSamples, "RAM %")),
+                        UiCards.panel("JVM heap history · % of maximum", chart(heapSamples, "Heap %")),
+                        UiCards.panel("GPU utilization history · %",chart(gpuSamples,"GPU %"))),
                 UiCards.columns(UiCards.panel("GPU VRAM USED / TOTAL",gpuMemory),UiCards.panel("GPU POWER",gpuPower),UiCards.panel("GPU TEMPERATURE",gpuTemperature)),
-                UiCards.panel("Logical processor inventory", cores(),
-                        UiCards.label("Processor count is detected. Individual core loads are unavailable; no per-core values are simulated.", "muted")),
+                inventory(),
                 UiCards.panel("Workload inspector", UiCards.label("3 Java CPU engines · CUDA executable: "+(com.parallelvisionlab.engine.CudaProcessor.available()?"available":"not built")+" · Per-core load and CPU power/temperature: unavailable", "muted")));
         sceneProperty().addListener((observable, before, after) -> {
             if (after == null) { timer.stop();stopGpu(); } else if (!paused) { timer.play();startGpu(); }
@@ -75,7 +80,8 @@ final class MonitorView extends VBox implements AutoCloseable {
         chart.setCreateSymbols(false);
         chart.setAnimated(false);
         chart.setMinWidth(0);
-        chart.setPrefHeight(230);
+        chart.setMinHeight(160);
+        chart.setPrefHeight(190);
         return chart;
     }
 
@@ -83,15 +89,25 @@ final class MonitorView extends VBox implements AutoCloseable {
         FlowPane cores = new FlowPane(8, 8);
         int count = Runtime.getRuntime().availableProcessors();
         for (int i = 0; i < Math.min(count, 64); i++) {
-            Label label = UiCards.label("C" + i + "\nN/A", "core");
+            Label label = UiCards.label("CPU " + i, "core");
             cores.getChildren().add(label);
         }
         if (count > 64) { cores.getChildren().add(UiCards.label("Showing first 64 of " + count, "muted")); }
         return cores;
     }
 
+    private TitledPane inventory() {
+        TitledPane pane = new TitledPane("Logical processors · " + Runtime.getRuntime().availableProcessors()
+                + " detected · inventory only; individual core usage is not collected", cores());
+        pane.setExpanded(false);
+        return pane;
+    }
+
     private void sample() {
         RuntimeSnapshot snapshot = RuntimeSnapshot.capture();
+        ram.setText(snapshot.memorySummary());
+        ramBar.setProgress(snapshot.memoryAvailable() ? snapshot.memoryFraction() : 0);
+        if (snapshot.memoryAvailable()) append(ramSamples, snapshot.memoryFraction() * 100);
         double heapFraction = (double) snapshot.usedHeapBytes() / snapshot.maxHeapBytes();
         heap.setText(String.format(Locale.ROOT, "%.0f MB", snapshot.usedHeapBytes() / 1048576.0));
         heapBar.setProgress(heapFraction);
