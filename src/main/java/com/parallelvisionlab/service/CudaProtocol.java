@@ -24,6 +24,11 @@ public class CudaProtocol
      public static void writeRequest(DataOutputStream out, PixelImage image, int operation, ConvolutionKernel kernel, boolean reuseInput) throws IOException 
      {
         if(operation<0||operation>2)throw new IllegalArgumentException("Unknown native operation");
+        out.writeInt(WORKER_REQUEST);out.writeInt(image.width());out.writeInt(image.height());out.writeInt(operation);
+        
+
+
+
      }
 
 
