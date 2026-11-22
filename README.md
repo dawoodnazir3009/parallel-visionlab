@@ -19,6 +19,10 @@ Maven, builds/tests and launches the app. Requires Windows x64, PowerShell 5.1+,
 internet, and winget if Git/Java is missing. Existing checkouts are preserved,
 without an automatic pull/reset. Source copies without a .git directory are also
 recognized and built in place. Python and pip are unnecessary for this Java/CUDA project.
+When the source is already present, Git is not required. Existing CUDA executables
+are checked for persistent-worker protocol 2 and rebuilt with installed tools when
+their source is newer or the worker check fails. A verified CUDA worker enables
+GPU correctness tests during setup before the application launches.
 
 For GPU development/build as well:
 
