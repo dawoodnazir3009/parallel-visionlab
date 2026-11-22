@@ -3,9 +3,11 @@
 .SYNOPSIS
 Bootstraps Parallel VisionLab on Windows x64, verifies it, and launches JavaFX.
 .DESCRIPTION
-Run from a clone or download this file alone. Existing repositories are never
-reset or automatically pulled. -InstallNative adds verified local CUDA compiler
-components and builds the native engine. Missing C++ tools may request elevation.
+Run from a local source folder or download this file alone. Local source does not
+require Git. Existing repositories are never reset or automatically pulled.
+-InstallNative installs native prerequisites and builds the CUDA engine. Existing
+CUDA builds are refreshed when stale and checked for persistent worker protocol 2.
+Missing C++ tools may request elevation.
 #>
 [CmdletBinding()]
 param(
@@ -60,29 +62,80 @@ function Get-Java25Home {
     return $null
 }
 
+function Test-ProjectRoot {
+    param([string]$Path)
+    return (Test-Path -LiteralPath (Join-Path $Path 'pom.xml')) -and
+        (Test-Path -LiteralPath (Join-Path $Path 'src\main\java\com\parallelvisionlab\VisionLabLauncher.java'))
+}
+
+function Test-CudaWorker {
+    param([string]$Executable)
+    $process=$null
+    $errors=$null
+    $script:cudaCheckError=''
+    try {
+        $start=[Diagnostics.ProcessStartInfo]::new()
+        $start.FileName=$Executable
+        $start.Arguments='--worker basic'
+        $start.UseShellExecute=$false
+        $start.CreateNoWindow=$true
+        $start.RedirectStandardInput=$true
+        $start.RedirectStandardOutput=$true
+        $start.RedirectStandardError=$true
+        $process=[Diagnostics.Process]::Start($start)
+        $errors=$process.StandardError.ReadToEndAsync()
+        $bytes=New-Object byte[] 4
+        $offset=0
+        $deadline=[DateTime]::UtcNow.AddSeconds(15)
+        while($offset -lt 4){
+            $remaining=[int][Math]::Max(1,($deadline-[DateTime]::UtcNow).TotalMilliseconds)
+            $read=$process.StandardOutput.BaseStream.ReadAsync($bytes,$offset,4-$offset)
+            if(-not $read.Wait($remaining)){throw 'CUDA worker startup timed out.'}
+            if($read.Result -eq 0){throw 'CUDA worker exited before its ready handshake.'}
+            $offset+=$read.Result
+        }
+        if([BitConverter]::ToString($bytes) -ne '50-56-57-32'){throw 'CUDA worker protocol version mismatch.'}
+        $process.StandardInput.Close()
+        if(-not $process.WaitForExit(5000)){throw 'CUDA worker did not shut down after verification.'}
+        if($process.ExitCode -ne 0){throw "CUDA worker exited with code $($process.ExitCode)."}
+        return $true
+    } catch {
+        $script:cudaCheckError=$_.Exception.Message
+        if($null -ne $process){
+            if(-not $process.HasExited){$process.Kill();[void]$process.WaitForExit(5000)}
+            if($null -ne $errors -and $errors.Wait(1000)){
+                $detail=$errors.Result.Trim()
+                if($detail.Length -gt 1000){$detail=$detail.Substring(0,1000)}
+                if($detail){$script:cudaCheckError+=' '+$detail}
+            }
+        }
+        return $false
+    } finally {
+        if($null -ne $process){
+            if(-not $process.HasExited){$process.Kill();[void]$process.WaitForExit(5000)}
+            $process.Dispose()
+        }
+    }
+}
+
 try {
     if ($env:OS -ne 'Windows_NT' -or -not [Environment]::Is64BitOperatingSystem -or
         $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { throw 'This setup supports Windows x64.' }
 
-    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Install-WingetPackage 'Git.Git' }
-    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git was installed; reopen PowerShell and rerun setup.' }
-
-    if ((Test-Path -LiteralPath (Join-Path $PSScriptRoot 'pom.xml')) -and
-        (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'src\main\java\com\parallelvisionlab\VisionLabLauncher.java'))) {
+    if (Test-ProjectRoot $PSScriptRoot) {
         $projectRoot = $PSScriptRoot
     } else {
         $projectRoot = [IO.Path]::GetFullPath($Destination)
         if (Test-Path -LiteralPath $projectRoot) {
-            if (-not (Test-Path -LiteralPath (Join-Path $projectRoot '.git'))) {
-                throw "Destination already exists and is not a clone: $projectRoot"
-            }
-            $remote = & git -C $projectRoot remote get-url origin
-            if ($LASTEXITCODE -ne 0 -or $remote.TrimEnd('/') -notin @($repositoryUrl, $repositoryUrl.Replace('.git', ''))) {
-                throw 'Existing destination does not have the expected GitHub origin.'
-            }
-        } else { Invoke-Checked 'git' @('clone', '--branch', 'main', $repositoryUrl, $projectRoot) }
+            if (-not (Test-ProjectRoot $projectRoot)) { throw "Destination exists but does not contain Parallel VisionLab source: $projectRoot" }
+        } else {
+            if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Install-WingetPackage 'Git.Git' }
+            if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git was installed; reopen PowerShell and rerun setup.' }
+            Invoke-Checked 'git' @('clone', '--branch', 'main', $repositoryUrl, $projectRoot)
+        }
     }
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'pom.xml'))) { throw 'Missing project pom.xml.' }
+    Write-Host "Using project source: $projectRoot"
 
     $jdkHome = Get-Java25Home
     if (-not $jdkHome) {
@@ -119,9 +172,35 @@ try {
         Invoke-Checked 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $projectRoot 'build-cuda.ps1'))
     }
 
+    $native=Join-Path $projectRoot 'native\cuda\build\Release\visionlab_cuda.exe'
+    $cudaReady=$false
+    if(Test-Path -LiteralPath $native){
+        $inputs=@(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'native\cuda') -File |
+            Where-Object {$_.Extension -in @('.cu','.cuh','.cpp','.h','.hpp') -or $_.Name -eq 'CMakeLists.txt'})
+        $inputs+=Get-Item -LiteralPath (Join-Path $projectRoot 'build-cuda.ps1')
+        $built=(Get-Item -LiteralPath $native).LastWriteTimeUtc
+        $stale=@($inputs | Where-Object {$_.LastWriteTimeUtc -gt $built}).Count -gt 0
+        if($stale){
+            Write-Host 'CUDA source is newer than its executable; rebuilding with installed tools.'
+            Invoke-Checked 'powershell' @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $projectRoot 'build-cuda.ps1'))
+        }
+        $cudaReady=Test-CudaWorker $native
+        if(-not $cudaReady -and -not $InstallNative -and -not $stale){
+            Write-Warning "CUDA worker check failed: $script:cudaCheckError Rebuilding the native executable."
+            Invoke-Checked 'powershell' @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $projectRoot 'build-cuda.ps1'))
+            $cudaReady=Test-CudaWorker $native
+        }
+        if(-not $cudaReady){throw "CUDA verification failed: $script:cudaCheckError Check the NVIDIA driver; use -InstallNative if build tools are missing."}
+        Write-Host 'CUDA persistent worker protocol 2 verified. GPU correctness tests are enabled.'
+    } else {
+        Write-Host 'CUDA executable is not built. CPU backends are available; use -InstallNative to enable GPU processing.'
+    }
+
     Push-Location $projectRoot
     try {
-        Invoke-Checked $mavenPath @('-Dmaven.repo.local=.tools/repository', '-B', 'verify')
+        $verify=@('-Dmaven.repo.local=.tools/repository','-B','verify')
+        if($cudaReady){$verify+='-Dvisionlab.cudaTests=true'}
+        Invoke-Checked $mavenPath $verify
         Write-Host "Setup and tests passed: $projectRoot"
         if (-not $NoLaunch) { Invoke-Checked $mavenPath @('-Dmaven.repo.local=.tools/repository', 'javafx:run') }
     } finally { Pop-Location }
