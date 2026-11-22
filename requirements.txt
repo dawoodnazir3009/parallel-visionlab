@@ -1,6 +1,0 @@
-# Parallel VisionLab has no Python dependencies.
-# pip install -r requirements.txt intentionally installs nothing.
-# Windows setup: powershell -ExecutionPolicy Bypass -File .\setup.ps1
-# Java 21, Maven, JavaFX and JUnit are handled by setup.ps1 and pom.xml.
-# Native development: add -InstallNative for Visual Studio C++/CMake and local CUDA 13.5.
-# Python and pip are not required to build or run this application.

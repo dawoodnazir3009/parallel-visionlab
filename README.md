@@ -18,8 +18,7 @@ This installs missing Git/JDK 25, clones the repository, downloads checksum-veri
 Maven, builds/tests and launches the app. Requires Windows x64, PowerShell 5.1+,
 internet, and winget if Git/Java is missing. Existing checkouts are preserved,
 without an automatic pull/reset. Source copies without a .git directory are also
-recognized and built in place. Python/pip is unnecessary; requirements.txt is
-intentionally comments only.
+recognized and built in place. Python and pip are unnecessary for this Java/CUDA project.
 
 For GPU development/build as well:
 
