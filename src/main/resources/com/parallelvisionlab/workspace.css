@@ -16,12 +16,23 @@
 .sidebar { -fx-background-color: #0e1523; -fx-border-color: transparent #263044 transparent transparent; -fx-padding: 22 12; }
 .brand { -fx-font-size: 14px; -fx-font-weight: bold; }
 .brand-mark { -fx-background-color: #2563eb; -fx-background-radius: 8; -fx-padding: 5 8; -fx-font-size: 17px; -fx-text-fill: white; }
-.nav-section { -fx-padding: 14 10 5 10; -fx-font-size: 10px; -fx-text-fill: #8090a8; }
+.nav-section { -fx-padding: 19 10 8 10; -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #dce5f4; }
+.nav-icon { -fx-fill: transparent; -fx-stroke: #94a3b8; }
+.button.nav-button:hover .nav-icon { -fx-stroke: #dce8f7; }
+.button.nav-button.active .nav-icon { -fx-stroke: #a9cbff; }
 .sidebar-footer { -fx-border-color: #263044 transparent transparent transparent; -fx-padding: 16 8 0 8; -fx-text-fill: #8090a8; -fx-font-size: 10px; }
 .page-title { -fx-font-size: 24px; -fx-font-weight: bold; }
 .page-scroll, .page-scroll > .viewport { -fx-background-color: #0b101b; }
 .page-scroll { -fx-padding: 0; -fx-background-insets: 0; }
-.panel { -fx-background-color: #111a2a; -fx-border-color: #263247; -fx-background-radius: 11; -fx-border-radius: 11; -fx-padding: 17; }
+.panel { -fx-background-color: #111a2a; -fx-border-color: #263247; -fx-background-radius: 11; -fx-border-radius: 11; -fx-padding: 13; }
+.live-value { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #a9cbff; }
+.tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #111a2a; }
+.tab-pane .tab { -fx-background-color: #1c2a40; -fx-padding: 6 12; }
+.tab-pane .tab:selected { -fx-background-color: #1e3356; }
+.tab-pane .tab .tab-label { -fx-text-fill: #dce8f7; }
+.titled-pane > .title { -fx-background-color: #111a2a; -fx-padding: 9 12; }
+.titled-pane { -fx-text-fill: #94a3b8; }
+.titled-pane > .content { -fx-background-color: #111a2a; -fx-border-color: #263247; -fx-padding: 12; }
 .panel-title { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #dce5f4; }
 .metric-value { -fx-font-size: 25px; -fx-font-weight: bold; }
 .sample-notice { -fx-text-fill: #a9cbff; -fx-font-size: 11px; }

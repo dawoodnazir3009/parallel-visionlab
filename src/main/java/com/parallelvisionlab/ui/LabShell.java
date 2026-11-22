@@ -14,7 +14,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
     private final EnumMap<LabPage, Button> links = new EnumMap<>(LabPage.class);
     private final Label title = UiCards.label("", "page-title");
     private final Label subtitle = UiCards.label("", "muted");
-    private final VBox content = new VBox(22);
+    private final VBox content = new VBox(14);
     private final ScrollPane scroll = new ScrollPane(content);
     private final LabSession session;
 
@@ -25,7 +25,8 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         this.session=session;
         VBox sidebar = new VBox(7);
         sidebar.getStyleClass().add("sidebar");
-        sidebar.setPrefWidth(210);
+        sidebar.setPrefWidth(246);
+        sidebar.setMinWidth(246);
         Label mark = UiCards.label("◈", "brand-mark");
         HBox brand = new HBox(9, mark, UiCards.label("Parallel VisionLab", "brand"));
         brand.setAlignment(Pos.CENTER_LEFT);
@@ -34,12 +35,15 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         String previousGroup = "";
         for (LabPage page : LabPage.values()) {
             if (!previousGroup.equals(page.group)) {
-                Label group = UiCards.label(page.group.toUpperCase(java.util.Locale.ROOT), "nav-section");
+                Label group = UiCards.label(page.group, "nav-section");
+                group.setMaxWidth(Double.MAX_VALUE);
                 sidebar.getChildren().add(group);
                 previousGroup = page.group;
             }
             Button link = new Button(page.title);
             link.getStyleClass().add("nav-button");
+            link.setGraphic(NavigationIcon.create(page));
+            link.setGraphicTextGap(10);
             link.setMaxWidth(Double.MAX_VALUE);
             link.setOnAction(event -> navigate(page));
             links.put(page, link);
@@ -49,7 +53,7 @@ public final class LabShell extends BorderPane implements AutoCloseable {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         sidebar.getChildren().addAll(spacer, UiCards.label("3 CPU + optional CUDA backends\nv0.3 · JavaFX desktop\nValidated measured benchmarks", "sidebar-footer"));
         setLeft(sidebar);
-        content.setPadding(new Insets(24));
+        content.setPadding(new Insets(18));
         scroll.setFitToWidth(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.getStyleClass().add("page-scroll");
