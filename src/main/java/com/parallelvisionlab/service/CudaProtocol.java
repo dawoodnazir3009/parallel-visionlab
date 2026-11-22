@@ -50,12 +50,23 @@ public class CudaProtocol
     }
 
 
-            
+     public static Result readResponse(DataInputStream input,int width,int height)throws IOException 
+     {
+        if(input.readInt()!=WORKER_RESPONSE||input.readInt()!=width||input.readInt()!=height)
 
+            throw new IOException("CUDA worker response version/dimensions mismatch");
 
+        double kernel=input.readDouble(),upload=input.readDouble(),download=input.readDouble();
+        for(double value:new double[]{kernel,upload,download})
+            if(!Double.isFinite(value)||value<0)
+            throw new IOException("Invalid CUDA worker timing");
+        
+        int[] pixels=new int[Math.multiplyExact(width,height)];
+        
+        byte[] chunk=new byte[64*1024];
+        
+        
 
-
-     }
 
 
 
