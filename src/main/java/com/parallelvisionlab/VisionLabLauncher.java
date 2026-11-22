@@ -10,6 +10,7 @@ import java.time.Duration;
 public final class VisionLabLauncher {
     private VisionLabLauncher() { }
     public static void main(String[] args)throws Exception {
+        CpuLimits.applyProcessLimit();
         if(args.length==1&&(args[0].equals("--self-test")||args[0].equals("--self-test-cpu"))){selfTest(!args[0].equals("--self-test-cpu"));return;}
         if(args.length==2&&args[0].equals("--benchmark-demo")){benchmarkDemo(Path.of(args[1]));return;}
         javafx.application.Application.launch(VisionLabApplication.class,args);

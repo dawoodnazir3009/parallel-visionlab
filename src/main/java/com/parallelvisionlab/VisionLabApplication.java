@@ -10,6 +10,7 @@ public final class VisionLabApplication extends Application {
     private LabShell shell;
     @Override
     public void start(Stage stage) {
+        com.parallelvisionlab.service.CpuLimits.applyProcessLimit();
         stage.setTitle("Parallel VisionLab");
         shell = new LabShell(stage);
         Scene scene = new Scene(shell, 1280, 840);
