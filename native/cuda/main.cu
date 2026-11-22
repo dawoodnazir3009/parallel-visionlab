@@ -9,6 +9,10 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 using Pixel=uint32_t;
 void check(cudaError_t error){if(error!=cudaSuccess)throw std::runtime_error(cudaGetErrorString(error));}
@@ -18,7 +22,10 @@ double readDouble(std::istream& in){uint64_t bits=uint64_t(read32(in))<<32;bits|
 void writeDouble(std::ostream& out,double value){uint64_t bits;std::memcpy(&bits,&value,8);write32(out,uint32_t(bits>>32));write32(out,uint32_t(bits));}
 template<class T>struct Device {
     T* data=nullptr;
-    explicit Device(size_t count){check(cudaMalloc(reinterpret_cast<void**>(&data),count*sizeof(T)));}
+    size_t capacity=0;
+    explicit Device(size_t count=0){ensure(count);}
+    void release(){if(data){check(cudaFree(data));data=nullptr;}capacity=0;}
+    void ensure(size_t count){if(count>capacity){release();check(cudaMalloc(reinterpret_cast<void**>(&data),count*sizeof(T)));capacity=count;}}
     ~Device(){if(data)cudaFree(data);}
     Device(const Device&)=delete;Device& operator=(const Device&)=delete;
 };
@@ -72,8 +79,98 @@ __global__ void sobel(const Pixel* gray,const Pixel* source,Pixel* output,int wi
     }
     int edge=channel(hypot(double(gx),double(gy)));output[i]=(source[i]&0xff000000u)|(edge<<16)|(edge<<8)|edge;
 }
+
+uint32_t swap32(uint32_t value){return (value>>24)|((value>>8)&0xff00u)|((value<<8)&0xff0000u)|(value<<24);}
+bool littleEndian(){uint32_t one=1;return *reinterpret_cast<unsigned char*>(&one)==1;}
+
+// Large binary transfers use bulk stream I/O instead of four calls per pixel.
+void readPixels(std::istream& input,std::vector<Pixel>& pixels,size_t count){
+    pixels.resize(count);
+    if(!input.read(reinterpret_cast<char*>(pixels.data()),count*sizeof(Pixel)))throw std::runtime_error("Truncated worker image");
+    if(littleEndian())for(Pixel& pixel:pixels)pixel=swap32(pixel);
+}
+void writePixels(std::ostream& output,std::vector<Pixel>& pixels,size_t count){
+    if(littleEndian())for(size_t i=0;i<count;i++)pixels[i]=swap32(pixels[i]);
+    output.write(reinterpret_cast<char*>(pixels.data()),count*sizeof(Pixel));
+}
+
+struct WorkerBuffers {
+    Device<Pixel> source,output,gray;
+    Device<double> kernel;
+    std::vector<Pixel> inputHost,outputHost;
+    size_t capacity=0;
+    uint32_t width=0,height=0;
+    bool uploaded=false;
+    void ensure(size_t count,bool sobelNeeded){
+        if(count>capacity){
+            source.release();output.release();gray.release();uploaded=false;capacity=0;
+            size_t freeBytes=0,totalBytes=0;check(cudaMemGetInfo(&freeBytes,&totalBytes));
+            if(count*sizeof(Pixel)*(sobelNeeded?3:2)+961*sizeof(double)>freeBytes)
+                throw std::runtime_error("Insufficient free GPU memory for this image");
+            source.ensure(count);output.ensure(count);capacity=count;
+            inputHost.reserve(count);outputHost.resize(count);
+        }
+        if(sobelNeeded)gray.ensure(count);
+    }
+};
+
+int workerLoop(bool tiled){
+#ifdef _WIN32
+    _setmode(_fileno(stdin),_O_BINARY);_setmode(_fileno(stdout),_O_BINARY);
+#endif
+    std::ios::sync_with_stdio(false);std::cin.tie(nullptr);
+    check(cudaSetDevice(0));cudaDeviceProp device;check(cudaGetDeviceProperties(&device,0));
+    // Complete context initialization before signaling readiness.
+    check(cudaFree(nullptr));
+    WorkerBuffers buffers;
+    write32(std::cout,0x50565732);std::cout.flush();
+    while(std::cin.peek()!=std::char_traits<char>::eof()){
+        if(read32(std::cin)!=0x50564c32)throw std::runtime_error("Unsupported worker protocol");
+        uint32_t width=read32(std::cin),height=read32(std::cin),operation=read32(std::cin),size=read32(std::cin),reuse=read32(std::cin);
+        uint64_t count64=uint64_t(width)*height;
+        if(!width||!height||count64>64000000||operation>2||size<1||size>31||size%2==0||reuse>1)
+            throw std::runtime_error("Invalid worker dimensions/filter");
+        std::vector<double> weights(size*size);double magnitude=0;
+        for(double& weight:weights){weight=readDouble(std::cin);if(!std::isfinite(weight))throw std::runtime_error("Nonfinite weight");magnitude+=std::abs(weight);}
+        if(magnitude>1000000)throw std::runtime_error("Excessive kernel magnitude");
+        if(reuse&&(!buffers.uploaded||buffers.width!=width||buffers.height!=height))throw std::runtime_error("Worker input cache mismatch");
+        int count=int(count64);buffers.ensure(count,operation==2);buffers.kernel.ensure(weights.size());
+        if(!reuse)readPixels(std::cin,buffers.inputHost,count);
+        double upload=timed([&]{
+            if(!reuse)check(cudaMemcpy(buffers.source.data,buffers.inputHost.data(),count*sizeof(Pixel),cudaMemcpyHostToDevice));
+            check(cudaMemcpy(buffers.kernel.data,weights.data(),weights.size()*sizeof(double),cudaMemcpyHostToDevice));
+        });
+        buffers.width=width;buffers.height=height;buffers.uploaded=true;
+        int blocks=(count+255)/256;
+        double kernelTime=timed([&]{
+            if(operation==0)grayscale<<<blocks,256>>>(buffers.source.data,buffers.output.data,count);
+            else if(operation==2){
+                grayscale<<<blocks,256>>>(buffers.source.data,buffers.gray.data,count);check(cudaGetLastError());
+                sobel<<<blocks,256>>>(buffers.gray.data,buffers.source.data,buffers.output.data,width,height);
+            }else if(tiled){
+                size_t shared=(16+size-1)*(16+size-1)*sizeof(Pixel);
+                if(shared>device.sharedMemPerBlock)throw std::runtime_error("Kernel exceeds shared-memory limit");
+                int tilesX=(width+15)/16,tilesY=(height+15)/16;
+                convolutionTiled<<<tilesX*tilesY,dim3(16,16),shared>>>(buffers.source.data,buffers.output.data,width,height,buffers.kernel.data,size,tilesX);
+            }else convolutionBasic<<<blocks,256>>>(buffers.source.data,buffers.output.data,width,height,buffers.kernel.data,size);
+            check(cudaGetLastError());
+        });
+        double download=timed([&]{check(cudaMemcpy(buffers.outputHost.data(),buffers.output.data,count*sizeof(Pixel),cudaMemcpyDeviceToHost));});
+        write32(std::cout,0x50564f32);write32(std::cout,width);write32(std::cout,height);
+        writeDouble(std::cout,kernelTime);writeDouble(std::cout,upload);writeDouble(std::cout,download);
+        writePixels(std::cout,buffers.outputHost,count);std::cout.flush();
+        if(!std::cout)throw std::runtime_error("Worker response write failed");
+    }
+    return 0;
+}
+
 int run(int argc,const std::filesystem::path* argv){
     try{
+        if(argc==3&&argv[1]==std::filesystem::path("--worker")){
+            std::string variant=argv[2].string();
+            if(variant!="basic"&&variant!="tiled")throw std::runtime_error("Unknown worker variant");
+            return workerLoop(variant=="tiled");
+        }
         if(argc==2&&argv[1]==std::filesystem::path("--device")){
             cudaDeviceProp device;check(cudaGetDeviceProperties(&device,0));std::cout<<device.name<<"\n";return 0;
         }
