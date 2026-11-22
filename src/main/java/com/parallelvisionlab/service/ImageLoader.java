@@ -35,5 +35,18 @@ public Image load(Path path) throws IOException
             finally{reader.dispose();}
         }
 
+        try (InputStream input = Files.newInputStream(path)) 
+        {
+            Image image = new Image(input);
+            if (image.isError() || image.getWidth() <= 0 || image.getHeight() <= 0) 
+            {
+                throw new IOException("This file could not be decoded as an image.", image.getException());
+            }
+            return image;
+        }
+    }
+
+
+
 
 
