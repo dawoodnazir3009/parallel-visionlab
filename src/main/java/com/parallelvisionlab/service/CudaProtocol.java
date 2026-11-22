@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 
 
 
-public class CudaProtocol {
+public class CudaProtocol 
+{
+    public static final int WORKER_READY = 0x50565732;
     
 }
