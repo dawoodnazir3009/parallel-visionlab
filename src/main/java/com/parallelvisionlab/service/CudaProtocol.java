@@ -81,7 +81,14 @@ public class CudaProtocol
         if(operation<0||operation>2)
             throw new IllegalArgumentException("Unknown native operation");
 
-      
+        try(var out=new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))) 
+        {
+            out.writeInt(0x50564c31);
+            
+            out.writeInt(image.width());
+            out.writeInt(image.height());
+            out.writeInt(operation);
+
 
 
 
