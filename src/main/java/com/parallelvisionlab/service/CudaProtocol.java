@@ -9,5 +9,6 @@ import java.nio.ByteBuffer;
 public class CudaProtocol 
 {
     public static final int WORKER_READY = 0x50565732;
+    public static final int WORKER_REQUEST = 0x50564c32;
     
 }
