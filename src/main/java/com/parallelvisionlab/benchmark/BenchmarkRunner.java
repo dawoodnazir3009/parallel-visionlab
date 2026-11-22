@@ -16,6 +16,10 @@ public final class BenchmarkRunner {
     public BenchmarkRunner(boolean includeCuda){this.includeCuda=includeCuda;}
     public BenchmarkRun run(PixelImage source, String name, ProcessingRequest request,
                             BenchmarkConfig config, DoubleConsumer progress) {
+        // Old archives may contain larger worker counts; new runs obey the cap
+        // and record the actual effective configuration without rewriting history.
+        config = new BenchmarkConfig(config.warmups(),config.iterations(),
+                Math.min(CpuLimits.MAX_WORKERS,config.workers()),config.leafRows());
         List<double[]> times = new ArrayList<>();
         var backends = ProcessingEngines.availableBackends().stream().filter(backend->includeCuda||!backend.gpu()).toArray(ExecutionBackend[]::new);
         List<double[][]> eventTimes=new ArrayList<>();
@@ -32,12 +36,16 @@ public final class BenchmarkRunner {
                     long start = System.nanoTime();
                     PixelImage actual = processor.process(source, request);
                     double elapsed = Math.max(1, System.nanoTime() - start) / 1_000_000.0;
-                    if (!ImageValidation.compare(expected, actual, backend.gpu()?1:0).passed()) {
-                        throw new IllegalStateException("Output validation failed for " + backend);
-                    }
-                    if (i >= 0) {
-                        measured[i] = elapsed;
-                        if(processor instanceof com.parallelvisionlab.engine.CudaProcessor gpu){var timings=gpu.lastResult();events[0][i]=timings.kernelMs();events[1][i]=timings.uploadMs();events[2][i]=timings.downloadMs();}
+                    try {
+                        if (!ImageValidation.compare(expected, actual, backend.gpu()?1:0).passed()) {
+                            throw new IllegalStateException("Output validation failed for " + backend);
+                        }
+                        if (i >= 0) {
+                            measured[i] = elapsed;
+                            if(processor instanceof com.parallelvisionlab.engine.CudaProcessor gpu){var timings=gpu.lastResult();events[0][i]=timings.kernelMs();events[1][i]=timings.uploadMs();events[2][i]=timings.downloadMs();}
+                        }
+                    } finally {
+                        if(processor instanceof com.parallelvisionlab.engine.CudaProcessor gpu)gpu.clearLastResult();
                     }
                     progress.accept(++completed / (double) total);
                 }
@@ -71,9 +79,9 @@ public final class BenchmarkRunner {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             ByteBuffer buffer = ByteBuffer.allocate(4096);
-            for (int pixel : image.copyPixels()) {
+            for (int y=0;y<image.height();y++)for(int x=0;x<image.width();x++) {
                 if (buffer.remaining() < 4) { digest.update(buffer.array(), 0, buffer.position()); buffer.clear(); }
-                buffer.putInt(pixel);
+                buffer.putInt(image.argbAt(x,y));
             }
             digest.update(buffer.array(), 0, buffer.position());
             return HexFormat.of().formatHex(digest.digest());
