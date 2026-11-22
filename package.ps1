@@ -2,6 +2,26 @@
 [CmdletBinding()]
 param()
 $ErrorActionPreference='Stop'
+function Compress-Application {
+    param([string]$Application,[string]$Destination)
+    $temporary=Join-Path (Split-Path -Parent $Destination) ('portable-'+[Guid]::NewGuid().ToString('N')+'.zip')
+    try {
+        for($attempt=1;$attempt -le 4;$attempt++){
+            try {
+                Compress-Archive -LiteralPath $Application -DestinationPath $temporary -Force -ErrorAction Stop
+                Move-Item -LiteralPath $temporary -Destination $Destination -Force
+                return
+            } catch {
+                if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}
+                if($attempt -eq 4){throw}
+                Write-Warning "Archive attempt $attempt failed; retrying after a possible Windows file lock."
+                Start-Sleep -Seconds 2
+            }
+        }
+    } finally {
+        if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}
+    }
+}
 Push-Location $PSScriptRoot
 try {
     $maven=Join-Path $PSScriptRoot '.tools\apache-maven-3.9.11\bin\mvn.cmd'
@@ -40,7 +60,7 @@ start "" ParallelVisionLab.exe
         if($LASTEXITCODE -ne 0){throw 'Packaged CPU self-test failed'}
     }finally{Pop-Location}
     Set-Content -LiteralPath (Join-Path $PSScriptRoot 'target\package-path.txt') -Value $application
-    Compress-Archive -LiteralPath $application -DestinationPath (Join-Path $PSScriptRoot 'target\ParallelVisionLab-Windows.zip') -Force
+    Compress-Application -Application $application -Destination (Join-Path $PSScriptRoot 'target\ParallelVisionLab-Windows.zip')
     Write-Host "Packaged application: $application"
     Write-Host 'Distribute the entire ZIP. Recipients do not need a JDK, Maven, Git, or Python.'
 }finally{Pop-Location}

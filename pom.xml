@@ -48,7 +48,7 @@
                     </options>
                     <launcher>ParallelVisionLab</launcher>
                     <jlinkImageName>ParallelVisionLab</jlinkImageName>
-                    <jlinkZipName>ParallelVisionLab-Windows</jlinkZipName>
+                    <jlinkZipName>ParallelVisionLab-runtime</jlinkZipName>
                     <stripDebug>true</stripDebug>
                     <noHeaderFiles>true</noHeaderFiles>
                     <noManPages>true</noManPages>
