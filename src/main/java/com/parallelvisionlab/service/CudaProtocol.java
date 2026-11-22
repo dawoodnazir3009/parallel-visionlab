@@ -32,6 +32,20 @@ public class CudaProtocol
             for(int x=0;x<size;x++)
                 out.writeDouble(kernel==null?1:kernel.weightAt(x,y));
 
+        if(!reuseInput)
+        {
+            ByteBuffer bytes=ByteBuffer.allocate(64*1024);
+            for(int y=0;y<image.height();y++)
+                for(int x=0;x<image.width();x++)
+                {
+                if(!bytes.hasRemaining())
+                    {
+                        out.write(bytes.array());bytes.clear();
+                    }
+                bytes.putInt(image.argbAt(x,y));
+            }
+
+
 
 
      }
