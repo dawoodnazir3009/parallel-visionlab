@@ -83,13 +83,17 @@ int run(int argc,const std::filesystem::path* argv){
         if(read32(input)!=0x50564c31)throw std::runtime_error("Unsupported protocol");
         uint32_t width=read32(input),height=read32(input),operation=read32(input),size=read32(input);
         uint64_t count64=uint64_t(width)*height;
-        if(!width||!height||count64>24000000||operation>2||size<1||size>31||size%2==0)throw std::runtime_error("Invalid dimensions/filter");
+        if(!width||!height||count64>64000000)throw std::runtime_error("Image dimensions exceed CUDA's 64-megapixel limit");
+        if(operation>2||size<1||size>31||size%2==0)throw std::runtime_error("Invalid filter configuration");
         int count=int(count64);std::vector<double> weights(size*size);double magnitude=0;
         for(double& weight:weights){weight=readDouble(input);if(!std::isfinite(weight))throw std::runtime_error("Nonfinite weight");magnitude+=std::abs(weight);}
         if(magnitude>1000000)throw std::runtime_error("Excessive kernel magnitude");
         std::vector<Pixel> pixels(count),result(count);for(Pixel& pixel:pixels)pixel=read32(input);
         if(input.peek()!=std::char_traits<char>::eof())throw std::runtime_error("Unexpected input bytes");
         cudaDeviceProp device;check(cudaGetDeviceProperties(&device,0));check(cudaSetDevice(0));
+        size_t freeBytes=0,totalBytes=0;check(cudaMemGetInfo(&freeBytes,&totalBytes));
+        size_t required=count64*sizeof(Pixel)*(operation==2?3:2)+weights.size()*sizeof(double);
+        if(required>freeBytes)throw std::runtime_error("Insufficient free GPU memory for this image; close GPU-heavy applications or use a smaller image");
         Device<Pixel> source(count),output(count),gray(operation==2?count:1);Device<double> kernel(weights.size());
         double upload=timed([&]{check(cudaMemcpy(source.data,pixels.data(),count*sizeof(Pixel),cudaMemcpyHostToDevice));check(cudaMemcpy(kernel.data,weights.data(),weights.size()*sizeof(double),cudaMemcpyHostToDevice));});
         int blocks=(count+255)/256;

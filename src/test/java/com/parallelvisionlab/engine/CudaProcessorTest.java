@@ -10,6 +10,26 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CudaProcessorTest {
+    @Test @EnabledIfSystemProperty(named="visionlab.largeCudaTests",matches="true")
+    void nativeKernelsProcessFullResolution48MegapixelPhoto() throws Exception {
+        var image=new com.parallelvisionlab.service.ImageLoader().load(Path.of(System.getProperty("visionlab.testImage")));
+        var input=com.parallelvisionlab.service.PixelImages.fromFx(image);
+        assertEquals(8064L*6048,(long)input.width()*input.height());
+        var reference=new SequentialProcessor();
+        for(var operation:FilterOperation.values()) {
+            var request=new ProcessingRequest(operation,2,1.2);
+            var expected=reference.process(input,request);
+            for(boolean tiled:new boolean[]{false,true}) {
+                var engine=new CudaProcessor(CudaProcessor.executable(),tiled,Duration.ofSeconds(60));
+                var actual=engine.process(input,request);
+                assertTrue(ImageValidation.compare(expected,actual,1).passed(),operation+" tiled="+tiled);
+                engine.clearLastResult();
+                assertNull(engine.lastResult());
+                assertEquals(expected.argbAt(0,0)>>>24,actual.argbAt(0,0)>>>24);
+                System.out.println("48MP CUDA validated: "+operation+" tiled="+tiled);
+            }
+        }
+    }
     @Test @EnabledIfSystemProperty(named="visionlab.cudaTests",matches="true")
     void nativeProtocolSupportsSpacesAndUnicodeWindowsPaths()throws Exception {
         var directory=java.nio.file.Files.createTempDirectory("visionlab unicode-图像-");
