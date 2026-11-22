@@ -16,6 +16,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
     private final TableView<BenchmarkRun.Measurement> table = new TableView<>();
     private final VBox bars = new VBox(12);
     private final ProgressBar progress = new ProgressBar(0);
+    private final BenchmarkUsageView usage = new BenchmarkUsageView();
     private Task<BenchmarkRun> active;
 
     MeasuredBenchmarkView(LabSession session) {
@@ -24,7 +25,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         var preferences=session.preferences.get();
         Spinner<Integer> warmups = new Spinner<>(0,20,preferences.warmups());
         Spinner<Integer> repeats = new Spinner<>(1,100,preferences.iterations());
-        Spinner<Integer> workers = new Spinner<>(1,256,preferences.workers());
+        Spinner<Integer> workers = new Spinner<>(1,8,preferences.workers());
         Spinner<Integer> threshold = new Spinner<>(1,2048,preferences.leafRows());
         session.preferences.addListener((observable,before,after)->{
             warmups.getValueFactory().setValue(after.warmups());repeats.getValueFactory().setValue(after.iterations());
@@ -71,7 +72,15 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
                 status.setText("Benchmark failed; no partial results recorded: " + error);
             });
             active.setOnCancelled(done -> { finish(cancel); status.setText("Cancelled; no partial experiment recorded."); });
-            Thread thread = new Thread(active,"visionlab-benchmark"); thread.setDaemon(true); thread.start();
+            Task<BenchmarkRun> task = active;
+            Thread thread = new Thread(() -> {
+                try { task.run(); }
+                finally {
+                    // Outside all timed measurements and after the runner stack has unwound.
+                    // The JVM decides how much unused heap to return to the operating system.
+                    System.gc();
+                }
+            },"visionlab-benchmark"); thread.setDaemon(true); thread.start();
         });
         addColumn("Backend",m -> m.backend().toString());
         addColumn("Median ms",m -> format(m.medianMs()));
@@ -82,13 +91,22 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         addColumn("GPU kernel ms",m -> m.backend().gpu()?format(m.kernelMs()):"—");
         addColumn("GPU H2D / D2H ms",m -> m.backend().gpu()?format(m.uploadMs())+" / "+format(m.downloadMs()):"—");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        table.setPrefHeight(180);
+        table.setMinHeight(200);
+        table.setPrefHeight(210);
         table.setPlaceholder(UiCards.label("Run a comparison to record measured CPU results.","muted"));
-        getChildren().addAll(UiCards.panel("Benchmark configuration",
+        TabPane results = new TabPane(new Tab("Measurements", table), new Tab("Runtime comparison", bars));
+        results.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        results.setPrefHeight(240);
+        summary.getStyleClass().remove("metric-value");
+        summary.getStyleClass().add("panel-title");
+        Label timingNotes = UiCards.label("Live graphs: latest 60 samples, about 2 seconds apart; vertical scale 0–100%. RAM shows physical system memory used / total; JVM heap shows Java memory only. CPU/GPU are system-wide. Brief workloads may fall between samples; telemetry adds background activity.", "muted");
+        TitledPane methodology = new TitledPane("Timing and validation details", UiCards.label(
+                "CPU: engine wall-clock. GPU: total process bridge, including startup, files and transfers. GPU event kernel/H2D/D2H times are separate. Validation, decoding and rendering are excluded. Warmups excluded; fixed backend order and other workloads affect results. GPU efficiency is N/A; lower runtime is not guaranteed.", "muted"));
+        methodology.setExpanded(false);
+        getChildren().addAll(usage, UiCards.panel("Benchmark configuration",
                 UiCards.columns(field("Warm-up runs",warmups),field("Measured iterations",repeats),field("CPU workers",workers),field("Fork/Join leaf rows",threshold)),
                 includeCuda,new HBox(10,run,cancel),progress,status),
-                UiCards.panel("Latest measured experiment",summary,bars,table),
-                UiCards.label("CPU: engine wall-clock. GPU: total process bridge, including startup, files and transfers. GPU event kernel/H2D/D2H times are separate. Validation, decoding and rendering are excluded. Warmups excluded; fixed backend order and other workloads affect results. GPU efficiency is N/A; lower runtime is not guaranteed.","muted"));
+                UiCards.panel("Latest measured experiment",summary,results), timingNotes, methodology);
         session.history.addListener((javafx.collections.ListChangeListener<BenchmarkRun>) change -> refresh());
         refresh();
     }
@@ -115,5 +133,5 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         }
     }
     private static String format(double value) {return String.format(Locale.ROOT,"%.3f",value);}
-    @Override public void close(){if(active!=null)active.cancel(true);}
+    @Override public void close(){usage.close();if(active!=null)active.cancel(true);}
 }
