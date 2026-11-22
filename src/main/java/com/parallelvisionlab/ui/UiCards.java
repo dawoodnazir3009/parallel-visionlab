@@ -16,7 +16,7 @@ final class UiCards {
     }
 
     static VBox panel(String title, Node... children) {
-        VBox box = new VBox(14);
+        VBox box = new VBox(10);
         box.getStyleClass().add("panel");
         box.setMinWidth(0);
         box.getChildren().add(label(title, "panel-title"));
@@ -24,14 +24,23 @@ final class UiCards {
         return box;
     }
 
-    static HBox columns(Node... children) {
-        HBox row = new HBox(14, children);
-        for (Node node : children) {
-            HBox.setHgrow(node, Priority.ALWAYS);
+    static GridPane columns(Node... children) {
+        GridPane row = new GridPane();
+        row.setHgap(14);
+        // Percentage columns give wrapping labels their actual available width.
+        // A preferred width of one pixel makes JavaFX measure entire cards as
+        // extremely tall columns of wrapped text, even in a wide window.
+        for (int index = 0; index < children.length; index++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / children.length);
+            column.setFillWidth(true);
+            row.getColumnConstraints().add(column);
+            Node node = children[index];
+            row.add(node, index, 0);
+            GridPane.setValignment(node, javafx.geometry.VPos.TOP);
             if (node instanceof Region region) {
                 region.setMinWidth(0);
                 region.setMaxWidth(Double.MAX_VALUE);
-                if (region instanceof VBox box) { box.setPrefWidth(1); }
             }
         }
         return row;
@@ -45,7 +54,7 @@ final class UiCards {
         VBox box = new VBox(10, label(title, "empty-title"), label(description, "muted"));
         box.getStyleClass().add("empty-state");
         box.setAlignment(javafx.geometry.Pos.CENTER);
-        box.setMinHeight(170);
+        box.setMinHeight(120);
         return box;
     }
 }
