@@ -9,6 +9,23 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ImageLoaderTest {
+    @Test void accepts48MegapixelPhotosWhenHeapBudgetAllows() throws Exception {
+        ImageLoader.validateDimensions(8064,6048,6L*1024*1024*1024);
+        assertThrows(IOException.class,()->ImageLoader.validateDimensions(8064,6048,1024L*1024*1024));
+    }
+
+    @Test void explainsRawDngConversion() throws Exception {
+        Path raw=Files.write(directory.resolve("camera.DNG"),new byte[]{73,73,42,0});
+        assertTrue(assertThrows(IOException.class,()->loader.load(raw)).getMessage().contains("camera RAW"));
+    }
+
+    @Test
+    @org.junit.jupiter.api.condition.EnabledIfSystemProperty(named="visionlab.testImage", matches=".+")
+    void opensUserSuppliedPhotoAtOriginalResolution() throws Exception {
+        var image=loader.load(Path.of(System.getProperty("visionlab.testImage")));
+        assertEquals(8064L*6048,(long)image.getWidth()*(long)image.getHeight());
+        assertNotNull(image.getPixelReader());
+    }
     @Test void animatedGifUsesOnlyTheFirstFrame()throws Exception {
         Path file=directory.resolve("animated.gif");
         var writer=javax.imageio.ImageIO.getImageWritersByFormatName("gif").next();
