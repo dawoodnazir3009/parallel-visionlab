@@ -7,6 +7,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkPreferencesTest {
     @TempDir Path directory;
+    @Test void migratesSavedWorkerCountsWithoutDiscardingOtherPreferences() throws Exception {
+        var store=new BenchmarkPreferences(directory.resolve("legacy.properties"));
+        store.save(new BenchmarkConfig(2,7,16,48));
+        assertEquals(new BenchmarkConfig(2,7,8,48),store.load(null));
+    }
     @Test void roundTripAndInvalidValues()throws Exception {
         Path file=directory.resolve("preferences.properties");var store=new BenchmarkPreferences(file);
         var defaults=new BenchmarkConfig(3,10,2,32);

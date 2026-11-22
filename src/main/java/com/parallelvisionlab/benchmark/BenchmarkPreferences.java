@@ -10,8 +10,12 @@ public final class BenchmarkPreferences {
     public BenchmarkConfig load(BenchmarkConfig fallback)throws IOException {
         if(!Files.exists(file))return fallback;
         Properties p=new Properties();try(InputStream in=Files.newInputStream(file)){p.load(in);}
-        try {return new BenchmarkConfig(Integer.parseInt(p.getProperty("warmups")),Integer.parseInt(p.getProperty("iterations")),
-                Integer.parseInt(p.getProperty("workers")),Integer.parseInt(p.getProperty("leafRows")));}
+        try {
+            var loaded = new BenchmarkConfig(Integer.parseInt(p.getProperty("warmups")),Integer.parseInt(p.getProperty("iterations")),
+                    Integer.parseInt(p.getProperty("workers")),Integer.parseInt(p.getProperty("leafRows")));
+            return new BenchmarkConfig(loaded.warmups(),loaded.iterations(),
+                    Math.min(com.parallelvisionlab.service.CpuLimits.MAX_WORKERS,loaded.workers()),loaded.leafRows());
+        }
         catch(RuntimeException exception){throw new IOException("Invalid saved benchmark preferences",exception);}
     }
     public void save(BenchmarkConfig config)throws IOException {
