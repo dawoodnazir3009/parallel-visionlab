@@ -107,7 +107,18 @@ public class CudaProtocol
             if(input.readInt()!=0x50564f31||input.readInt()!=width||input.readInt()!=height)
                 throw new IOException("CUDA output version/dimensions mismatch");
             double kernel=input.readDouble(),upload=input.readDouble(),download=input.readDouble();
-            
+            for(double value:new double[]{kernel,upload,download})
+                if(!Double.isFinite(value)||value<0)
+                    throw new IOException("Invalid CUDA timing");
+            int[] pixels=new int[Math.multiplyExact(width,height)];
+            for(int i=0;i<pixels.length;i++)
+                pixels[i]=input.readInt();
+            return new Result(new PixelImage(width,height,pixels),kernel,upload,download);
+        }
+    }
+}
+
+
 
 
 
