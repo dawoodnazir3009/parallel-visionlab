@@ -17,6 +17,7 @@ public final class ExecutorProcessor implements ImageProcessor, AutoCloseable {
     private boolean closed;
 
     public ExecutorProcessor(int workers) {
+        com.parallelvisionlab.service.CpuLimits.validateWorkers(workers);
         RowPartitions.create(1, workers);
         this.workers = workers;
         pool = Executors.newFixedThreadPool(workers, Thread.ofPlatform().daemon(true)

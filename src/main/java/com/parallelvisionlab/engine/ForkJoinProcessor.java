@@ -14,6 +14,7 @@ public final class ForkJoinProcessor implements ImageProcessor, AutoCloseable {
     private boolean closed;
 
     public ForkJoinProcessor(int workers, int threshold) {
+        com.parallelvisionlab.service.CpuLimits.validateWorkers(workers);
         RowPartitions.create(1, workers);
         if (threshold < 1 || threshold > 2048) { throw new IllegalArgumentException("Row threshold must be 1-2048"); }
         this.threshold = threshold;

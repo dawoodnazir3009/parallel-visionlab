@@ -13,7 +13,7 @@ public final class ProcessingEngines implements AutoCloseable {
     private int currentWorkers;
     private boolean closed;
 
-    public static int automaticWorkers() { return Math.max(1, Math.min(256, Runtime.getRuntime().availableProcessors())); }
+    public static int automaticWorkers() { return CpuLimits.automaticWorkers(); }
     public static java.util.List<ExecutionBackend> availableBackends(){return java.util.Arrays.stream(ExecutionBackend.values()).filter(backend->!backend.gpu()||CudaProcessor.available()).toList();}
 
     public synchronized ImageProcessor select(ExecutionBackend backend, int workers) {
@@ -23,7 +23,7 @@ public final class ProcessingEngines implements AutoCloseable {
     public synchronized ImageProcessor select(ExecutionBackend backend, int workers, int threshold) {
         Objects.requireNonNull(backend, "backend");
         if (closed) { throw new IllegalStateException("Processing engines are closed"); }
-        if (workers < 1 || workers > 256) { throw new IllegalArgumentException("Workers must be between 1 and 256"); }
+        CpuLimits.validateWorkers(workers);
         if(backend.gpu())return new CudaProcessor(CudaProcessor.executable(),backend==ExecutionBackend.CUDA_TILED,java.time.Duration.ofSeconds(60));
         if (backend == ExecutionBackend.SEQUENTIAL) { return sequential; }
         if (backend == ExecutionBackend.FORK_JOIN) {
