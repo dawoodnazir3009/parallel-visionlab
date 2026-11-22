@@ -34,7 +34,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final Button cancel = new Button("Cancel");
     private final ComboBox<FilterOperation> operation = new ComboBox<>();
     private final ComboBox<ExecutionBackend> backend = new ComboBox<>();
-    private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8", "16", "32");
+    private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8");
     private final ProcessingEngines engines = new ProcessingEngines();
     private Task<?> activeTask;
     private boolean closed;
@@ -101,16 +101,17 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         cancel.setDisable(true);
         cancel.setOnAction(event->{if(activeTask!=null){cancel.setDisable(true);status.setText("Cancelling processing...");activeTask.cancel(true);}});
         VBox configuration = UiCards.panel("Processing configuration",
-                field("Image operation", operation), field("Execution backend", backend), field("CPU worker threads", threads),
-                field("Fork/Join leaf rows", threshold),
-                field("Gaussian radius (kernel = 2r + 1)", radius), field("Gaussian sigma", sigma),
+                UiCards.columns(field("Image operation", operation), field("Execution backend", backend), field("CPU workers", threads)),
+                UiCards.columns(field("Fork/Join leaf rows", threshold),
+                field("Gaussian radius", radius), field("Gaussian sigma", sigma)),
                 new HBox(12, process, cancel, activity), UiCards.label("All three Java CPU backends support every filter. CUDA backends appear when the native executable is built and require an NVIDIA driver.", "sample-notice"));
+        configuration.setId("workspace-configuration");
         save.setDisable(true);
         outputPreview.setPreserveRatio(true);
         outputPreview.setAccessibleText("Processed filter output preview");
         ImagePreviewPane outputCanvas = new ImagePreviewPane(outputPreview,outputEmpty);
         VBox output = UiCards.panel("Processed output", outputCanvas, save);
-        setCenter(new VBox(14, UiCards.columns(input, configuration), output));
+        setCenter(new VBox(12, configuration, UiCards.columns(input, output)));
         open.setOnAction(event -> chooseImage());
         process.setOnAction(event -> processImage());
         save.setOnAction(event -> saveResult());
