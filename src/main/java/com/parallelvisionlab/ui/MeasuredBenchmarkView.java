@@ -31,7 +31,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
             warmups.getValueFactory().setValue(after.warmups());repeats.getValueFactory().setValue(after.iterations());
             workers.getValueFactory().setValue(after.workers());threshold.getValueFactory().setValue(after.leafRows());
         });
-        CheckBox includeCuda=new CheckBox("Include CUDA (process-bridge timings)");
+        CheckBox includeCuda=new CheckBox("Include CUDA (persistent worker timings)");
         includeCuda.setId("include-cuda");
         includeCuda.setSelected(com.parallelvisionlab.engine.CudaProcessor.available());
         includeCuda.disableProperty().bind(session.busy.or(new javafx.beans.property.SimpleBooleanProperty(!com.parallelvisionlab.engine.CudaProcessor.available())));
@@ -101,7 +101,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         summary.getStyleClass().add("panel-title");
         Label timingNotes = UiCards.label("Live graphs: latest 60 samples, about 2 seconds apart; vertical scale 0–100%. RAM shows physical system memory used / total; JVM heap shows Java memory only. CPU/GPU are system-wide. Brief workloads may fall between samples; telemetry adds background activity.", "muted");
         TitledPane methodology = new TitledPane("Timing and validation details", UiCards.label(
-                "CPU: engine wall-clock. GPU: total process bridge, including startup, files and transfers. GPU event kernel/H2D/D2H times are separate. Validation, decoding and rendering are excluded. Warmups excluded; fixed backend order and other workloads affect results. GPU efficiency is N/A; lower runtime is not guaranteed.", "muted"));
+                "CPU: engine wall-clock. New GPU runs use persistent binary pipes and cached immutable input; no temporary image files. The first request includes worker/context startup; later requests reuse buffers and input. Warmups are excluded, so zero warmups can include startup in measured samples. Event kernel/H2D/D2H times are separate. Validation and rendering are excluded. Historical file-bridge results keep their original timing scope in CSV. GPU efficiency is N/A; lower runtime is not guaranteed.", "muted"));
         methodology.setExpanded(false);
         getChildren().addAll(usage, UiCards.panel("Benchmark configuration",
                 UiCards.columns(field("Warm-up runs",warmups),field("Measured iterations",repeats),field("CPU workers",workers),field("Fork/Join leaf rows",threshold)),

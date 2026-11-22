@@ -11,11 +11,16 @@ public final class BenchmarkCsv {
             Object[] fields = {run.id(), run.timestamp(), run.source(), run.imageHash(), run.width(), run.height(),
                     run.request().operation(), run.request().gaussianRadius(), run.request().gaussianSigma(), m.backend(), m.workers(),
                     run.config().leafRows(), run.config().warmups(), run.config().iterations(), m.medianMs(), m.minimumMs(), m.maximumMs(),
-                    m.speedup(), m.backend().gpu()?"":m.efficiency(), m.megapixelsPerSecond(), m.rgbTolerance()==0?"exact-pass":"rgb-tolerance-1-alpha-exact", m.backend().gpu()?"process-bridge-wall-clock":"engine-wall-clock", run.javaVersion(),run.operatingSystem(),"measured",m.kernelMs(),m.uploadMs(),m.downloadMs(),m.rgbTolerance(),run.hardwareSummary()};
+                    m.speedup(), m.backend().gpu()?"":m.efficiency(), m.megapixelsPerSecond(), m.rgbTolerance()==0?"exact-pass":"rgb-tolerance-1-alpha-exact", timingScope(run,m), run.javaVersion(),run.operatingSystem(),"measured",m.kernelMs(),m.uploadMs(),m.downloadMs(),m.rgbTolerance(),run.hardwareSummary()};
             for (int i=0; i<fields.length; i++) { if(i>0)csv.append(','); csv.append(quote(String.valueOf(fields[i]))); }
             csv.append("\r\n");
         }
         return csv.toString();
+    }
+    private static String timingScope(BenchmarkRun run,BenchmarkRun.Measurement measurement){
+        if(!measurement.backend().gpu())return "engine-wall-clock";
+        return run.hardwareSummary().contains("CUDA_transport=persistent-pipe-v2")
+                ?"persistent-pipe-wall-clock":"process-bridge-wall-clock";
     }
     static String quote(String field) {
         // Avoid interpreting user-controlled filenames as spreadsheet formulas.
