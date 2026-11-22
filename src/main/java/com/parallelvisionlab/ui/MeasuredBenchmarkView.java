@@ -25,7 +25,7 @@ final class MeasuredBenchmarkView extends VBox implements AutoCloseable {
         var preferences=session.preferences.get();
         Spinner<Integer> warmups = new Spinner<>(0,20,preferences.warmups());
         Spinner<Integer> repeats = new Spinner<>(1,100,preferences.iterations());
-        Spinner<Integer> workers = new Spinner<>(1,8,preferences.workers());
+        Spinner<Integer> workers = new Spinner<>(1,com.parallelvisionlab.service.CpuLimits.MAX_WORKERS,preferences.workers());
         Spinner<Integer> threshold = new Spinner<>(1,2048,preferences.leafRows());
         session.preferences.addListener((observable,before,after)->{
             warmups.getValueFactory().setValue(after.warmups());repeats.getValueFactory().setValue(after.iterations());

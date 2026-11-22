@@ -11,7 +11,7 @@ final class SettingsView extends VBox {
         var preferences=session.preferences.get();
         Spinner<Integer> warmups=new Spinner<>(0,20,preferences.warmups());
         Spinner<Integer> iterations=new Spinner<>(1,100,preferences.iterations());
-        Spinner<Integer> workers=new Spinner<>(1,8,preferences.workers());
+        Spinner<Integer> workers=new Spinner<>(1,com.parallelvisionlab.service.CpuLimits.MAX_WORKERS,preferences.workers());
         Spinner<Integer> leafRows=new Spinner<>(1,2048,preferences.leafRows());
         Label feedback=UiCards.label("Preferences are saved locally under .tools/preferences.properties.","muted");
         Button apply=new Button("Save Benchmark Preferences");apply.getStyleClass().add("primary");

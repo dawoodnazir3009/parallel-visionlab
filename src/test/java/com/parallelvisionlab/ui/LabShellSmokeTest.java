@@ -118,6 +118,7 @@ class LabShellSmokeTest {
                 @SuppressWarnings("unchecked")
                 ComboBox<ExecutionBackend> backend = (ComboBox<ExecutionBackend>) workspace.lookup("#execution-backend");
                 ComboBox<?> threads = (ComboBox<?>) workspace.lookup("#worker-threads");
+                assertTrue(threads.getItems().contains("16"));
                 assertEquals(com.parallelvisionlab.service.ProcessingEngines.availableBackends().size(), backend.getItems().size());
                 assertTrue(threads.isDisabled());
                 backend.setValue(ExecutionBackend.EXECUTOR);

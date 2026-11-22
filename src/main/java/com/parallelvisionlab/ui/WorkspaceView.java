@@ -34,7 +34,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     private final Button cancel = new Button("Cancel");
     private final ComboBox<FilterOperation> operation = new ComboBox<>();
     private final ComboBox<ExecutionBackend> backend = new ComboBox<>();
-    private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8");
+    private final ComboBox<String> threads = choice("Automatic", "1", "2", "4", "8", "16");
     private final ProcessingEngines engines = new ProcessingEngines();
     private Task<?> activeTask;
     private boolean closed;
