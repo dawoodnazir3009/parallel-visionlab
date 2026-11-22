@@ -91,8 +91,8 @@ Java may keep unused heap committed for reuse, so system RAM does not necessaril
 return to its pre-run value immediately.
 
 History/settings are local to .tools/experiments and .tools/preferences.properties
-under the current working folder. Keep a portable installation in a writable
-folder; back up .tools if preserving experiments matters.
+under the current working folder. Keep the source project in a writable folder;
+back up .tools if preserving experiments matters.
 
 ## Timing and correctness
 
@@ -123,35 +123,25 @@ alpha to match exactly. Invalid outputs are not recorded as successful runs.
 See [filter contracts](docs/filter-contract.md) and
 [the measured example/report](docs/project-report.md).
 
-## Portable Windows package
+## Current development stage
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\package.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-Distribute target/ParallelVisionLab-Windows.zip, not an individual JAR/EXE.
-Extract the entire folder and run ParallelVisionLab.exe (or Start-ParallelVisionLab.cmd).
-The ZIP includes a native launcher and Java runtime; recipients need no JDK,
-Maven, Git or Python. If CUDA was built, its executable is included; GPU use still
-requires compatible NVIDIA hardware/driver. Runtime notices are under runtime/legal
-and THIRD_PARTY. Generated binaries and downloaded toolchains are not committed.
+Finalize and verify the source application before creating a portable release.
+Generated portable folders, bundled runtimes and distribution ZIPs are removed.
+Do not regenerate them during routine development. The package.ps1 script is
+retained for the final packaging step when explicitly requested.
 
-Package locations are recorded in target/package-path.txt. No-display verification:
-
-```powershell
-# From the extracted application's folder
-.\runtime\bin\java.exe --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --self-test-cpu
-# Also exercise installed CUDA
-.\runtime\bin\java.exe --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --self-test
-# Reproduce the supplied generated-image benchmark
-.\runtime\bin\java.exe --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --benchmark-demo results.csv
-```
+The native CUDA executable under native/cuda/build is retained because the source
+application needs it for GPU processing. It is not a portable desktop bundle.
 
 ## Architecture and collaboration
 
 JavaFX UI → immutable pixels/filter requests → processing engines → validation →
 benchmark records → persistent archive / charts / CSV. CUDA is a separate C++/CUDA
-executable with a versioned file protocol; there is no JNI.
+executable with a versioned binary-pipe protocol; there is no JNI.
 
 See [roadmap/status](docs/roadmap.md), [contribution workflow](CONTRIBUTING.md),
 [environment](docs/environment.md), [native protocol](docs/native-cuda.md),

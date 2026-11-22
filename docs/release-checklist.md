@@ -1,5 +1,12 @@
 # Release and team acceptance
 
+## Packaging deferred
+
+As of 22 November 2026, development and acceptance use the source application.
+Create the final portable executable only when the project is finalized and the
+user requests packaging. Historical bundled-runtime checks below do not represent
+an approved final release; the generated portable builds have been removed.
+
 ## Verified on the development computer
 
 - Java 25 Maven build and regression suite.

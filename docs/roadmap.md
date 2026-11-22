@@ -6,13 +6,14 @@ three-person team in four weeks, with a fifth week available for stabilization.
 
 ## Current checkpoint
 
-November 18, 2026: the core application is implemented as version 0.3.0 release
-candidate. It retains the supplied HTML-style JavaFX interface. All three Java
+November 22, 2026: version 0.3.0 is being finalized from source. All three Java
 CPU engines and both CUDA variants are connected, validated and benchmarked.
-Actual RTX 4050 tests, a standalone setup clone, and bundled-runtime CPU/GPU
-self-tests passed. The latest complete local suite has 65 tests with GPU and UI
-tests enabled. Hosted Windows/Linux Java CI passed; hosted workers do not provide
-the hardware tests.
+CPU processing allows up to 16 logical processors. CUDA uses persistent workers,
+binary pipes and reusable buffers. The latest complete local suite passed all
+83 tests, including GPU, UI and 48-megapixel validation. Earlier bundled-runtime
+self-tests passed, but generated portable builds have been removed. Final
+portable packaging is deferred until project finalization and an explicit request.
+Hosted Java CI does not provide the hardware tests.
 
 Remaining acceptance work is manual: final visual/file-dialog walkthrough,
 genuinely separate Windows computer, a broader performance dataset and team demo
