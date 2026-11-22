@@ -15,7 +15,7 @@ try {
     if($LASTEXITCODE -ne 0){throw "Packaging failed: $LASTEXITCODE"}
     $runtime=Join-Path $PSScriptRoot 'target\ParallelVisionLab'
     $destination=Join-Path $PSScriptRoot ('target\portable-'+(Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
-    & (Join-Path $jdkHome 'bin\jpackage.exe') --type app-image --name ParallelVisionLab --dest $destination --runtime-image $runtime --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --app-version 0.3.0 --vendor 'Parallel VisionLab Team' --description 'Parallel and Distributed Image Processing Laboratory'
+    & (Join-Path $jdkHome 'bin\jpackage.exe') --type app-image --name ParallelVisionLab --dest $destination --runtime-image $runtime --module com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher --java-options '-XX:MaxRAMPercentage=50' --app-version 0.3.0 --vendor 'Parallel VisionLab Team' --description 'Parallel and Distributed Image Processing Laboratory'
     if($LASTEXITCODE -ne 0){throw 'Native application launcher packaging failed'}
     $application=Join-Path $destination 'ParallelVisionLab'
     $launch=Join-Path $application 'Start-ParallelVisionLab.cmd'
