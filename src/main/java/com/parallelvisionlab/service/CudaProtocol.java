@@ -43,7 +43,14 @@ public class CudaProtocol
                         out.write(bytes.array());bytes.clear();
                     }
                 bytes.putInt(image.argbAt(x,y));
-            }
+                if(bytes.position()>0)
+                    out.write(bytes.array(),0,bytes.position());
+        }
+        out.flush();
+    }
+
+
+            
 
 
 
