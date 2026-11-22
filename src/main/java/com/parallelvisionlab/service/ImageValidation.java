@@ -9,3 +9,7 @@ public final class ImageValidation {
         public boolean passed() { return dimensionsMatch && mismatchedPixels == 0; }
     }
 
+    private ImageValidation() 
+    { 
+        
+    }
