@@ -32,3 +32,16 @@ public final class ImageValidation {
         long mismatch = 0, sum = 0;
         int maximum = 0;
 
+        for (int i = 0; i < count; i++) 
+        {
+            if (i % 4096 == 0 && Thread.currentThread().isInterrupted()) 
+            {
+                 throw new CancellationException(); 
+                }
+
+
+            boolean different = false;
+            int left = expected.argbAt(i % width, i / width), right = actual.argbAt(i % width, i / width);
+
+
+
