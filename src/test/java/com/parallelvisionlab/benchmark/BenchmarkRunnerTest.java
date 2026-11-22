@@ -7,11 +7,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkRunnerTest {
     @Test void capsNewRunsAndRecordsTheEffectiveWorkerCount() {
-        var run=new BenchmarkRunner().run(new PixelImage(8,8,new int[64]),"cap-test",
-                new ProcessingRequest(FilterOperation.GRAYSCALE,1,1),new BenchmarkConfig(0,1,16,1),p->{});
-        assertEquals(8,run.config().workers());
+        var run=new BenchmarkRunner().run(new PixelImage(16,16,new int[256]),"cap-test",
+                new ProcessingRequest(FilterOperation.GRAYSCALE,1,1),new BenchmarkConfig(0,1,32,1),p->{});
+        assertEquals(16,run.config().workers());
         for(var measurement:run.measurements())
-            assertEquals(measurement.backend()==ExecutionBackend.SEQUENTIAL?1:8,measurement.workers());
+            assertEquals(measurement.backend()==ExecutionBackend.SEQUENTIAL?1:16,measurement.workers());
     }
     @Test void measuredRunHasComparableMetricsAndSourceMetadata() {
         var run = new BenchmarkRunner().run(new PixelImage(3,2,new int[6]), "fixture.png",

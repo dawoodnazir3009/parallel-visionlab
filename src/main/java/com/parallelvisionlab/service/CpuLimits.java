@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Limits processing pools and, on Windows, the complete application process. */
 public final class CpuLimits {
-    public static final int MAX_WORKERS = 8;
+    public static final int MAX_WORKERS = 16;
     private static boolean applied;
     private static String affinityStatus = "Not applied to this process";
     private CpuLimits() { }
@@ -17,7 +17,7 @@ public final class CpuLimits {
 
     public static void validateWorkers(int workers) {
         if (workers < 1 || workers > MAX_WORKERS)
-            throw new IllegalArgumentException("CPU workers must be between 1 and 8 logical processors");
+            throw new IllegalArgumentException("CPU workers must be between 1 and " + MAX_WORKERS + " logical processors");
     }
 
     public static synchronized String affinityStatus() { return affinityStatus; }
@@ -25,15 +25,15 @@ public final class CpuLimits {
     public static synchronized void applyProcessLimit() {
         if (applied) return;
         if (!System.getProperty("os.name").startsWith("Windows")) {
-            affinityStatus = "8-worker cap; process affinity supported on Windows only";
+            affinityStatus = MAX_WORKERS + "-worker cap; process affinity supported on Windows only";
             applied = true;
             return;
         }
-        // Restrict only this application, using up to eight CPUs already allowed
+        // Restrict only this application, using up to the configured CPUs already allowed
         // by Windows. Never broaden an existing affinity restriction.
         String command = "$ErrorActionPreference='Stop'; $process=[System.Diagnostics.Process]::GetProcessById("
                 + ProcessHandle.current().pid() + "); $allowed=$process.ProcessorAffinity.ToInt64(); "
-                + "$selected=[long]0; $count=0; for($i=0;$i -lt 64 -and $count -lt 8;$i++){"
+                + "$selected=[long]0; $count=0; for($i=0;$i -lt 64 -and $count -lt " + MAX_WORKERS + ";$i++){"
                 + "$bit=([long]1 -shl $i); if(($allowed -band $bit) -ne 0){$selected=$selected -bor $bit; $count++}}; "
                 + "if($count -eq 0){throw 'No eligible logical processors'}; "
                 + "$process.ProcessorAffinity=[IntPtr]::new($selected); $process.Refresh(); "
@@ -50,9 +50,9 @@ public final class CpuLimits {
             applied = true;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while applying the 8-logical-processor limit", exception);
+            throw new IllegalStateException("Interrupted while applying the " + MAX_WORKERS + "-logical-processor limit", exception);
         } catch (IOException exception) {
-            throw new IllegalStateException("Cannot apply the 8-logical-processor limit: " + exception.getMessage(), exception);
+            throw new IllegalStateException("Cannot apply the " + MAX_WORKERS + "-logical-processor limit: " + exception.getMessage(), exception);
         } finally {
             if (helper != null && helper.isAlive()) helper.destroyForcibly();
         }

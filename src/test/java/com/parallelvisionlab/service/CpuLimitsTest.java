@@ -17,7 +17,7 @@ class CpuLimitsTest {
             assertTrue(child.waitFor(25,TimeUnit.SECONDS));
             String output=new String(child.getInputStream().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).trim();
             assertEquals(0,child.exitValue(),output);
-            assertTrue(output.matches("[1-8] logical processors; affinity mask [0-9A-F]+"),output);
+            assertTrue(output.matches("(?:[1-9]|1[0-6]) logical processors; affinity mask [0-9A-F]+"),output);
         } finally { if(child.isAlive())child.destroyForcibly(); }
     }
 

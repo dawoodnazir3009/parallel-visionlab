@@ -10,7 +10,7 @@ class ForkJoinProcessorTest {
     @Test void exactAgreementAcrossThresholdBoundariesWorkersAndFilters() throws Exception {
         Random random = new Random(123);
         var reference = new SequentialProcessor();
-        for (int threshold : new int[]{1, 4, 32}) for (int workers : new int[]{1, 2, 8}) {
+        for (int threshold : new int[]{1, 4, 32}) for (int workers : new int[]{1, 2, 8, 16}) {
             var parallel = new ForkJoinProcessor(workers, threshold);
             try (parallel) {
                 for (int height : new int[]{1, 3, 4, 5, 33}) {

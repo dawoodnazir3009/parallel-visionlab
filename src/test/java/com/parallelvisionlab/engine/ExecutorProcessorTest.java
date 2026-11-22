@@ -39,7 +39,7 @@ class ExecutorProcessorTest {
     @Test void everyFilterMatchesSequentialAcrossShapesAndWorkerCounts() throws Exception {
         Random random = new Random(42);
         var sequential = new SequentialProcessor();
-        for (int workers : new int[]{1, 2, 4, 8}) {
+        for (int workers : new int[]{1, 2, 4, 8, 16}) {
             var parallel = new ExecutorProcessor(workers);
             try (parallel) {
                 for (int[] shape : new int[][]{{1,1}, {1,9}, {11,1}, {13,7}, {8,12}}) {
