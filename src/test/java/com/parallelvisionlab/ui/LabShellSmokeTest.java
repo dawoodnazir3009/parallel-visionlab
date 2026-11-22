@@ -30,6 +30,37 @@ class LabShellSmokeTest {
         toolkit.get(15, TimeUnit.SECONDS);
     }
     @AfterAll static void stopToolkit(){Platform.exit();}
+    @Test void cardsStayCompactAtDesktopWindowSizes() throws Exception {
+        FutureTask<Void> check = new FutureTask<>(() -> {
+            for (double width : new double[]{1280, 1536, 1920}) {
+                Stage stage = new Stage();
+                LabShell shell = new LabShell(stage, new LabSession(directory));
+                try {
+                    Scene scene = new Scene(shell, width, 800);
+                    scene.getStylesheets().add(getClass().getResource("/com/parallelvisionlab/workspace.css").toExternalForm());
+                    stage.setScene(scene);
+                    for (LabPage page : new LabPage[]{LabPage.WORKSPACE, LabPage.BENCHMARK}) {
+                        ((VBox)shell.getLeft()).getChildren().stream().filter(Button.class::isInstance)
+                                .map(Button.class::cast).filter(button -> button.getText().equals(page.title))
+                                .findFirst().orElseThrow().fire();
+                        shell.applyCss(); shell.layout();
+                        if (page == LabPage.WORKSPACE) {
+                            var configuration = (javafx.scene.layout.Region)shell.lookup("#workspace-configuration");
+                            assertTrue(configuration.getHeight() < 320,
+                                    "Configuration stretched to " + configuration.getHeight() + " at width " + width);
+                        } else {
+                            var usage = (javafx.scene.layout.Region)shell.lookup("#benchmark-live-usage");
+                            assertTrue(usage.getHeight() < 230,
+                                    "Telemetry stretched to " + usage.getHeight() + " at width " + width);
+                        }
+                    }
+                } finally { shell.close(); stage.setScene(null); stage.close(); }
+            }
+            return null;
+        });
+        Platform.runLater(check);
+        check.get(30, TimeUnit.SECONDS);
+    }
     @Test void navigatesEveryPageAndRetainsWorkspaceInstance() throws Exception {
         FutureTask<Void> check = new FutureTask<>(() -> {
             Stage stage = new Stage();
@@ -42,14 +73,27 @@ class LabShellSmokeTest {
                 shell.layout();
                 WorkspaceView workspace = null;
                 VBox sidebar = (VBox) shell.getLeft();
+                assertEquals(java.util.List.of("Workspace", "Performance", "System"),
+                        sidebar.getChildren().stream().filter(Label.class::isInstance)
+                                .map(Label.class::cast).filter(label -> label.getStyleClass().contains("nav-section"))
+                                .map(Label::getText).toList());
                 for (LabPage page : LabPage.values()) {
                     Button link = sidebar.getChildren().stream().filter(Button.class::isInstance)
                             .map(Button.class::cast).filter(button -> button.getText().equals(page.title)).findFirst().orElseThrow();
+                    assertNotNull(link.getGraphic());
+                    assertNotNull(link.getGraphic().lookup(".nav-icon"));
                     link.fire();
                     shell.applyCss();
                     shell.layout();
                     assertEquals(page.title, ((Label) shell.lookup(".page-title")).getText());
                     assertEquals(1, sidebar.getChildren().stream().filter(node -> node.getStyleClass().contains("active")).count());
+                    if (page == LabPage.MONITOR) {
+                        Label ram = (Label)shell.lookup("#monitor-live-ram");
+                        assertNotNull(ram);
+                        assertTrue(ram.getText().contains("GB"));
+                        assertTrue(shell.lookupAll(".core").stream().map(Label.class::cast)
+                                .noneMatch(label -> label.getText().contains("N/A")));
+                    }
                     if (page == LabPage.WORKSPACE) { workspace = (WorkspaceView) shell.lookup(".workspace"); }
                 }
                 sidebar.getChildren().stream().filter(Button.class::isInstance).map(Button.class::cast)
@@ -97,6 +141,8 @@ class LabShellSmokeTest {
     }
     @Test void benchmarkButtonRecordsAndRestoresARealExperiment()throws Exception {
         CompletableFuture<Void> recorded=new CompletableFuture<>();
+        CompletableFuture<Void> sampled=new CompletableFuture<>();
+        CompletableFuture<Void> memorySampled=new CompletableFuture<>();
         var shellRef=new java.util.concurrent.atomic.AtomicReference<LabShell>();
         var stageRef=new java.util.concurrent.atomic.AtomicReference<Stage>();
         FutureTask<Void> start=new FutureTask<>(()->{
@@ -112,11 +158,31 @@ class LabShellSmokeTest {
             });
             ((VBox)shell.getLeft()).getChildren().stream().filter(Button.class::isInstance).map(Button.class::cast).filter(button->button.getText().equals("Benchmark Lab")).findFirst().orElseThrow().fire();
             shell.applyCss();shell.layout();
+            Label heap=(Label)shell.lookup("#benchmark-live-heap");
+            assertNotNull(heap);
+            assertNotNull(shell.lookup("#benchmark-live-cpu"));
+            assertNotNull(shell.lookup("#benchmark-live-gpu"));
+            assertNotNull(shell.lookup("#benchmark-live-vram"));
+            Label ram = (Label)shell.lookup("#benchmark-live-ram");
+            assertNotNull(ram);
+            ram.textProperty().addListener((observable,before,after)->{
+                if(after.contains("GB"))memorySampled.complete(null);
+            });
+            if(ram.getText().contains("GB"))memorySampled.complete(null);
+            assertNotNull(shell.lookup("#benchmark-history-ram"));
+            assertNotNull(shell.lookup("#benchmark-history-cpu"));
+            assertNotNull(shell.lookup("#benchmark-history-heap"));
+            assertNotNull(shell.lookup("#benchmark-history-gpu"));
+            assertNotNull(shell.lookup("#benchmark-history-vram"));
+            heap.textProperty().addListener((observable,before,after)->{
+                if(after.endsWith(" MB"))sampled.complete(null);
+            });
+            if(heap.getText().endsWith(" MB"))sampled.complete(null);
             ((CheckBox)shell.lookup("#include-cuda")).setSelected(false);
             Button run=(Button)shell.lookup("#run-benchmark");assertFalse(run.isDisabled());run.fire();
             return null;
         });
-        try{Platform.runLater(start);start.get(15,TimeUnit.SECONDS);recorded.get(30,TimeUnit.SECONDS);}
+        try{Platform.runLater(start);start.get(15,TimeUnit.SECONDS);recorded.get(30,TimeUnit.SECONDS);sampled.get(15,TimeUnit.SECONDS);memorySampled.get(15,TimeUnit.SECONDS);}
         finally{
             FutureTask<Void> cleanup=new FutureTask<>(()->{if(shellRef.get()!=null)shellRef.get().close();if(stageRef.get()!=null)stageRef.get().close();return null;});
             Platform.runLater(cleanup);cleanup.get(10,TimeUnit.SECONDS);
