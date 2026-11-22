@@ -25,6 +25,8 @@ public final class CudaProcessor implements ImageProcessor {
     }
     public static boolean available(){return Files.isRegularFile(executable());}
     public CudaProtocol.Result lastResult(){return lastResult;}
+    /** Release the previous frame after its timing metadata has been consumed. */
+    public void clearLastResult(){lastResult=null;}
     @Override public PixelImage grayscale(PixelImage source){return execute(source,0,null);}
     @Override public PixelImage convolve(PixelImage source,ConvolutionKernel kernel){return execute(source,1,java.util.Objects.requireNonNull(kernel));}
     @Override public PixelImage sobel(PixelImage source){return execute(source,2,null);}
