@@ -1,5 +1,0 @@
-variant,transport,width,height,warmups,iterations,median_ms,input_cache
-basic,file-process,512,512,2,5,151.467,none
-basic,persistent-pipe,512,512,2,5,2.408,immutable-identity
-tiled,file-process,512,512,2,5,145.005,none
-tiled,persistent-pipe,512,512,2,5,2.807,immutable-identity
