@@ -7,9 +7,9 @@
     <version>0.3.0</version>
     <name>Parallel VisionLab</name>
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.2</javafx.version>
+        <javafx.version>25.0.5</javafx.version>
     </properties>
     <dependencies>
         <dependency>
@@ -43,6 +43,9 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.parallelvisionlab/com.parallelvisionlab.VisionLabLauncher</mainClass>
+                    <options>
+                        <option>-XX:MaxRAMPercentage=50</option>
+                    </options>
                     <launcher>ParallelVisionLab</launcher>
                     <jlinkImageName>ParallelVisionLab</jlinkImageName>
                     <jlinkZipName>ParallelVisionLab-Windows</jlinkZipName>
