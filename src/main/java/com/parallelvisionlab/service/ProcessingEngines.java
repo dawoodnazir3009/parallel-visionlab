@@ -4,11 +4,12 @@ import com.parallelvisionlab.engine.*;
 import com.parallelvisionlab.model.ExecutionBackend;
 import java.util.Objects;
 
-/** Owns a reusable pool, replaces it on worker-count changes, rejects use after close. */
+/** Owns reusable CPU pools and CUDA workers; rejects use after close. */
 public final class ProcessingEngines implements AutoCloseable {
     private final ImageProcessor sequential = new SequentialProcessor();
     private ExecutorProcessor executor;
     private ForkJoinProcessor forkJoin;
+    private final java.util.EnumMap<ExecutionBackend,CudaProcessor> cuda = new java.util.EnumMap<>(ExecutionBackend.class);
     private int forkWorkers, forkThreshold;
     private int currentWorkers;
     private boolean closed;
@@ -24,7 +25,7 @@ public final class ProcessingEngines implements AutoCloseable {
         Objects.requireNonNull(backend, "backend");
         if (closed) { throw new IllegalStateException("Processing engines are closed"); }
         CpuLimits.validateWorkers(workers);
-        if(backend.gpu())return new CudaProcessor(CudaProcessor.executable(),backend==ExecutionBackend.CUDA_TILED,java.time.Duration.ofSeconds(60));
+        if(backend.gpu())return cuda.computeIfAbsent(backend,key->new CudaProcessor(CudaProcessor.executable(),key==ExecutionBackend.CUDA_TILED,java.time.Duration.ofSeconds(60)));
         if (backend == ExecutionBackend.SEQUENTIAL) { return sequential; }
         if (backend == ExecutionBackend.FORK_JOIN) {
             if (threshold < 1 || threshold > 2048) { throw new IllegalArgumentException("Row threshold must be 1-2048"); }
@@ -43,9 +44,15 @@ public final class ProcessingEngines implements AutoCloseable {
         return executor;
     }
 
+    public synchronized void releaseCudaResources() {
+        cuda.values().forEach(CudaProcessor::close);cuda.clear();
+    }
+    public synchronized void clearCudaResults() { cuda.values().forEach(CudaProcessor::clearLastResult); }
+
     @Override public synchronized void close() {
         closed = true;
         if (executor != null) { executor.close(); }
         if (forkJoin != null) { forkJoin.close(); }
+        releaseCudaResources();
     }
 }

@@ -28,8 +28,9 @@ public final class VisionLabLauncher {
         if(includeGpu&&CudaProcessor.available()){
             for(boolean tiled:new boolean[]{false,true})for(var operation:FilterOperation.values()){
                 var request=new ProcessingRequest(operation,2,1.2);
-                var gpu=new CudaProcessor(CudaProcessor.executable(),tiled,Duration.ofSeconds(60));
+                try(var gpu=new CudaProcessor(CudaProcessor.executable(),tiled,Duration.ofSeconds(60))){
                 if(!ImageValidation.compare(reference.process(source,request),gpu.process(source,request),1).passed())throw new IllegalStateException("GPU self-test failed: "+operation);
+                }
             }
         }
         Path file=Files.createTempFile("visionlab-selftest-",".png");

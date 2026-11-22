@@ -123,6 +123,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         threshold.valueProperty().addListener((observable, before, after) -> configurationChanged());
         updateParameterControls();
         clear.setOnAction(event -> {
+            engines.releaseCudaResources();
             preview.setImage(null);
             source = null;
             session.input.set(null);
@@ -168,6 +169,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
             }
         };
         runTask(task, loaded -> {
+            engines.releaseCudaResources();
             Image image = loaded.preview();
             source = loaded.pixels();
             sourceName = file.getName();
@@ -189,7 +191,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
         ExecutionBackend selectedBackend = backend.getValue();
         int workers = selectedBackend == ExecutionBackend.SEQUENTIAL || selectedBackend.gpu() ? 1 :
                 (threads.getValue().equals("Automatic") ? ProcessingEngines.automaticWorkers() : Integer.parseInt(threads.getValue()));
-        String execution = selectedBackend.gpu()? selectedBackend+" (process bridge)" : selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
+        String execution = selectedBackend.gpu()? selectedBackend+" (persistent CUDA worker)" : selectedBackend + " (" + workers + " configured worker" + (workers == 1 ? "" : "s") + ")";
         int leafRows = threshold.getValue();
         status.setText("Applying " + request.operation() + " using " + execution + "...");
         Task<ProcessedImage> task = new Task<>() {
@@ -233,6 +235,7 @@ public final class WorkspaceView extends BorderPane implements AutoCloseable {
     }
 
     private void resetOutput() {
+        engines.clearCudaResults();
         result = null;
         resultOperation = null;
         outputPreview.setImage(null);
