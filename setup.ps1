@@ -41,20 +41,20 @@ function Install-WingetPackage {
     Refresh-ToolPath
 }
 
-function Get-Java21Home {
+function Get-Java25Home {
     $candidates = @()
     if ($env:JAVA_HOME) { $candidates += $env:JAVA_HOME }
     $javaCommand = Get-Command javac -ErrorAction SilentlyContinue
     if ($javaCommand) { $candidates += Split-Path (Split-Path $javaCommand.Source) }
     foreach ($base in @("$env:ProgramFiles\Eclipse Adoptium", "$env:LOCALAPPDATA\Programs\Eclipse Adoptium")) {
         if (Test-Path -LiteralPath $base) {
-            $candidates += @(Get-ChildItem -LiteralPath $base -Directory -Filter 'jdk-21*' | Select-Object -ExpandProperty FullName)
+            $candidates += @(Get-ChildItem -LiteralPath $base -Directory -Filter 'jdk-25*' | Select-Object -ExpandProperty FullName)
         }
     }
     foreach ($candidate in $candidates) {
         $releaseFile = Join-Path $candidate 'release'
         if ((Test-Path -LiteralPath $releaseFile) -and
-            ((Get-Content -LiteralPath $releaseFile -Raw) -match 'JAVA_VERSION="21[.\"]') -and
+            ((Get-Content -LiteralPath $releaseFile -Raw) -match 'JAVA_VERSION="25[.\"]') -and
             (Test-Path -LiteralPath (Join-Path $candidate 'bin\javac.exe'))) { return $candidate }
     }
     return $null
@@ -84,12 +84,12 @@ try {
     }
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'pom.xml'))) { throw 'Missing project pom.xml.' }
 
-    $jdkHome = Get-Java21Home
+    $jdkHome = Get-Java25Home
     if (-not $jdkHome) {
-        Install-WingetPackage 'EclipseAdoptium.Temurin.21.JDK'
-        $jdkHome = Get-Java21Home
+        Install-WingetPackage 'EclipseAdoptium.Temurin.25.JDK'
+        $jdkHome = Get-Java25Home
     }
-    if (-not $jdkHome) { throw 'JDK 21 not found after installation. Reopen PowerShell and rerun setup.' }
+    if (-not $jdkHome) { throw 'JDK 25 not found after installation. Reopen PowerShell and rerun setup.' }
     $env:JAVA_HOME = $jdkHome
     $env:Path = (Join-Path $jdkHome 'bin') + ';' + $env:Path
 
