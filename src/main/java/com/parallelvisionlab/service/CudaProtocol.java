@@ -93,7 +93,14 @@ public class CudaProtocol
             for(int y=0;y<size;y++)
                 for(int x=0;x<size;x++)
                    out.writeDouble(kernel==null?1:kernel.weightAt(x,y));
-       
+            for(int y=0;y<image.height();y++)
+                for(int x=0;x<image.width();x++)out.writeInt(image.argbAt(x,y));
+        }
+    }
+
+
+
+
 
 
 
