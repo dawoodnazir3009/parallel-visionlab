@@ -1,6 +1,0 @@
-/target/
-/.tools/
-/.idea/
-*.class
-*.log
-/native/cuda/build/
