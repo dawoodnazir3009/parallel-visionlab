@@ -72,13 +72,13 @@ Actual memory pressure
 can still vary. CPU per-core utilization, CPU power and CPU temperature are
 explicitly unavailable rather than simulated.
 
-Windows application launches restrict the Java process to at most eight eligible
+Windows application launches restrict the Java process to at most sixteen eligible
 logical processors using process affinity. CPU processing pools and UI controls
-are capped at eight workers; Automatic selects up to eight. Saved preferences above
-eight are reduced when loaded, while historical measurements retain their original
+are capped at sixteen workers; Automatic selects up to sixteen. Saved preferences above
+sixteen are reduced when loaded, while historical measurements retain their original
 worker counts. Settings shows the verified affinity mask. Select ExecutorService
 or Fork/Join for parallel CPU processing; Sequential intentionally uses one worker.
-The cap does not guarantee full utilization of all eight processors.
+The cap does not guarantee full utilization of all sixteen processors.
 
 After a benchmark worker finishes, temporary output references are released and
 garbage collection is requested outside the measured work. The loaded source and
