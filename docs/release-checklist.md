@@ -2,7 +2,7 @@
 
 ## Verified on the development computer
 
-- Java 21 Maven build and regression suite.
+- Java 25 Maven build and regression suite.
 - Actual RTX 4050 basic/tiled kernel tests for all four filters.
 - Exact three-CPU-backend equality and declared GPU RGB tolerance/alpha rules.
 - End-to-end JavaFX benchmark button, saved history and archive restoration.

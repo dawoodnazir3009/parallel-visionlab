@@ -1,6 +1,6 @@
 # Parallel VisionLab
 
-Java 21 / JavaFX desktop laboratory comparing **Sequential Java**, **ExecutorService**,
+Java 25 / JavaFX desktop laboratory comparing **Sequential Java**, **ExecutorService**,
 **Fork/Join**, and custom **CUDA basic/tiled kernels**. The six-page desktop interface
 follows the supplied HTML design. Version 0.3.0 is a feature-complete core release
 candidate; see the remaining manual release checks below.
@@ -14,7 +14,7 @@ into an empty folder and run:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-This installs missing Git/JDK 21, clones the repository, downloads checksum-verified
+This installs missing Git/JDK 25, clones the repository, downloads checksum-verified
 Maven, builds/tests and launches the app. Requires Windows x64, PowerShell 5.1+,
 internet, and winget if Git/Java is missing. Existing checkouts are preserved,
 without an automatic pull/reset. Source copies without a .git directory are also
@@ -66,9 +66,26 @@ With system Maven installed, use mvn verify / mvn javafx:run instead.
 Changing a filter/backend/parameter clears stale output. Background tasks keep
 controls responsive; processing/benchmarks can be cancelled. Pools and processes
 are closed on exit. Oversized file/header checks run before decoding: 256 MB file
-limit, and at most min(24 million, JVM max heap / 96) pixels. Actual memory pressure
+limit, and at most min(64 million, JVM max heap / 96) pixels. The CUDA executable
+also accepts up to 64 million pixels and checks free GPU memory before allocation.
+Actual memory pressure
 can still vary. CPU per-core utilization, CPU power and CPU temperature are
 explicitly unavailable rather than simulated.
+
+Windows application launches restrict the Java process to at most eight eligible
+logical processors using process affinity. CPU processing pools and UI controls
+are capped at eight workers; Automatic selects up to eight. Saved preferences above
+eight are reduced when loaded, while historical measurements retain their original
+worker counts. Settings shows the verified affinity mask. Select ExecutorService
+or Fork/Join for parallel CPU processing; Sequential intentionally uses one worker.
+The cap does not guarantee full utilization of all eight processors.
+
+After a benchmark worker finishes, temporary output references are released and
+garbage collection is requested outside the measured work. The loaded source and
+workspace previews remain available; use **Clear** in Image Workspace to remove
+them. Saved benchmark results contain metadata and measurements, not image buffers.
+Java may keep unused heap committed for reuse, so system RAM does not necessarily
+return to its pre-run value immediately.
 
 History/settings are local to .tools/experiments and .tools/preferences.properties
 under the current working folder. Keep a portable installation in a writable
@@ -125,7 +142,7 @@ See [roadmap/status](docs/roadmap.md), [contribution workflow](CONTRIBUTING.md),
 [environment](docs/environment.md), [native protocol](docs/native-cuda.md),
 [UI handoff](docs/ui-dashboard.md), and [release/demo checks](docs/release-checklist.md).
 
-Java 21 CI builds/tests Windows and Linux. Desktop/GPU tests are opt-in and were
+Java 25 CI builds/tests Windows and Linux. Desktop/GPU tests are opt-in and were
 run locally on Windows with an RTX 4050. Remaining manual checks include visual
 review of all states, native file-dialog errors, and a genuinely separate Windows
 computer; a bundled-runtime self-test is not a clean-VM certification.

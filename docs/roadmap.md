@@ -23,7 +23,7 @@ The original 4-5 week schedule below remains a planning baseline for that work.
 
 | Phase | Status | Delivered behavior / evidence |
 | --- | --- | --- |
-| 1. Foundation | Implemented | JDK 21, modular Maven/JavaFX, GitHub |
+| 1. Foundation | Implemented | JDK 25, modular Maven/JavaFX, GitHub |
 | 2. Image workspace | Implemented | Background load, first GIF frame, dimensions, clear, fit/zoom |
 | 3. Pixel/engine contracts | Implemented | Immutable ARGB, kernels, filter requests and backend selection |
 | 4. Sequential grayscale | Verified | Fixed weights/rounding, alpha, known-color tests |

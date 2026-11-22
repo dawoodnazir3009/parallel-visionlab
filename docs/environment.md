@@ -1,14 +1,14 @@
 # Verified development environment
 
-Updated November 18, 2026 (Asia/Karachi).
+Updated November 22, 2026 (Asia/Karachi).
 
 | Component | Observed status |
 | --- | --- |
 | OS | Windows 11 x64 |
-| Java | Temurin JDK 21.0.12.1 |
+| Java | Temurin JDK 25.0.5.1 |
 | Git | 2.56.0.windows.2 |
 | Maven | Project-local 3.9.11; dependency cache under .tools/repository |
-| JavaFX | Maven-managed 21.0.2, named application module |
+| JavaFX | Maven-managed 25.0.5, named application module |
 | GPU | NVIDIA GeForce RTX 4050 Laptop GPU, 6 GB |
 | NVIDIA driver | 610.47; nvidia-smi available |
 | CUDA compiler | 13.5.37, official component ZIPs installed under .tools/cuda |
@@ -30,8 +30,9 @@ Original empty ../project/abc.java was preserved. The Maven application lives in
 parallel-visionlab. Git author identity is local to the repository. Generated
 toolchains, archives, experiments and target binaries are ignored by Git.
 
-Known tool warnings: JavaFX 21.0.2 dependency-model warnings, classpath JavaFX
-configuration warning in the opt-in UI tests, and a deprecated jlink compression
-option from javafx-maven-plugin 0.0.8. They did not prevent the verified builds.
+Known tool warnings: Maven's bundled Guice uses a terminally deprecated
+`sun.misc.Unsafe` method; JavaFX reports restricted native access in the
+classpath-based test run; and javafx-maven-plugin 0.0.8 uses a deprecated jlink
+compression option. They did not prevent compilation, tests or packaging.
 The application itself launches as a named module; tests intentionally use the
 classpath. A genuinely separate Windows machine remains a manual release check.
