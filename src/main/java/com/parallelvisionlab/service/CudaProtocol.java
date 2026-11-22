@@ -14,7 +14,17 @@ public class CudaProtocol
 
     public record Result(PixelImage pixels,double kernelMs,double uploadMs,double downloadMs) 
     {
-        
+
      }
-    
+    private CudaProtocol() 
+    {
+
+     }
+
+
+
+
+
+
+     
 }
