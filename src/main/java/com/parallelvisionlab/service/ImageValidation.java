@@ -26,3 +26,9 @@ public final class ImageValidation {
         {
             return new Result(false, -1, -1, Double.NaN);
         }
+
+
+        int width = expected.width(), count = Math.multiplyExact(width, expected.height());
+        long mismatch = 0, sum = 0;
+        int maximum = 0;
+
