@@ -98,6 +98,16 @@ public class CudaProtocol
         }
     }
 
+    public static Result read(Path file,int width,int height)throws IOException 
+    {
+        if(Files.size(file)!=36L+4L*width*height)
+            throw new IOException("Malformed CUDA output length");
+        try(var input=new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) 
+        {
+            if(input.readInt()!=0x50564f31||input.readInt()!=width||input.readInt()!=height)
+                throw new IOException("CUDA output version/dimensions mismatch");
+            double kernel=input.readDouble(),upload=input.readDouble(),download=input.readDouble();
+            
 
 
 
