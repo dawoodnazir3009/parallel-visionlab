@@ -20,7 +20,7 @@ export, runtime telemetry, saved defaults and portable Windows packaging.
 flowchart LR
     UI[JavaFX dashboard] --> Model[Immutable pixels and requests]
     Model --> CPU[Sequential / ExecutorService / ForkJoin]
-    Model --> Bridge[Versioned file and process bridge]
+    Model --> Bridge[Persistent native worker and binary pipes]
     Bridge --> GPU[Basic / tiled CUDA kernels]
     CPU --> Check[Output validation]
     GPU --> Check
@@ -32,8 +32,9 @@ flowchart LR
 CPU kernels operate on disjoint output rows and share immutable input. Executor
 tasks join before output publication. Fork/Join recursively splits row ranges;
 Sobel waits for the grayscale stage before gradients. Pools are reused and closed
-on reconfiguration/exit. CUDA uses isolated temporary files, a process timeout,
-exit-code checks and output length/version/dimension checks. No JNI is used.
+on reconfiguration/exit. CUDA uses persistent processes with framed binary pipes,
+input/device buffer reuse, a request timeout and response version/dimension checks.
+Workers close when their owner finishes; no JNI is used.
 
 ## Correctness and algorithms
 
@@ -72,7 +73,7 @@ identifier, min/max, throughput and validation scopes are retained in the CSV.
 | CUDA GPU — Tiled Kernel | 180.417 | 0.115x | N/A | 1.276 |
 
 CPU rows measure the engine call, including allocations/scheduling/synchronization.
-GPU rows measure the entire executable bridge, including process/context startup,
+GPU rows in this historical run measure the executable bridge, including process/context startup,
 files and transfers. CUDA event times are reported separately and must not be
 presented as equivalent end-to-end speedups. Efficiency applies only to configured
 CPU workers; GPU efficiency is not defined as speedup divided by CUDA core count.
@@ -80,8 +81,11 @@ CPU workers; GPU efficiency is not defined as speedup divided by CUDA core count
 This run demonstrates substantial native-process overhead on a small input. It
 does not establish that the tiled variant is always faster: its kernel can be
 slower for small images, small filters, or particular hardware conditions. The
-process bridge intentionally makes this tradeoff visible. A persistent native
-worker could reduce overhead in future work without requiring JNI.
+original file bridge made this tradeoff visible. The current implementation uses
+a persistent native worker with binary pipes and cached immutable input. Current
+results have a different timing scope and must not be substituted into this
+historical table. The opt-in CudaWorkflowBenchmarkTest compares both transports
+in the same session; its CSV is written under target.
 
 ## Reproduction and evaluation plan
 

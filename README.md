@@ -94,14 +94,26 @@ folder; back up .tools if preserving experiments matters.
 ## Timing and correctness
 
 CPU: engine wall-clock including allocation, scheduling and synchronization.
-GPU: total process-bridge wall-clock including startup, binary files and transfers.
+GPU: persistent-worker wall-clock including binary pipe exchange, transfers,
+kernel work and result decoding. The first request starts a native worker and CUDA
+context; later requests reuse that worker, GPU buffers and the same immutable
+input. Warmups normally exclude this startup from measured samples. Zero warmups
+can include startup in the measured samples. New runs do not use temporary image files.
 CUDA events record kernel, upload and download times separately; do not compare
 GPU kernel-only time directly against end-to-end CPU time as equivalent scopes.
 
 Warmups are excluded; measured repetitions report median/min/max. Decoding,
 output validation, rendering and PNG export are excluded. Backend order is fixed;
 background work, JVM state and thermal changes affect timings. Small inputs may
-run slower on GPU because this version starts a separate native process per call.
+run slower on GPU because pipe exchange, decoding and transfers still have a cost.
+New CSV exports identify persistent-pipe timings; older archived file-bridge runs
+retain their original scope. Rebuild the native executable with build-cuda.ps1
+after updating to the worker protocol. Clearing/replacing the workspace image,
+finishing a benchmark, or closing the application terminates owned GPU workers
+and releases their host/device buffers. Worker requests retain a 60-second timeout
+covering startup and pipe I/O; failures never silently fall back to CPU.
+See the [same-session transport measurements](docs/cuda-workflow-performance.md)
+for a validated file-bridge versus persistent-worker comparison and reproduction command.
 
 CPU validation is exact. GPU permits at most 1 level of RGB error and requires
 alpha to match exactly. Invalid outputs are not recorded as successful runs.
