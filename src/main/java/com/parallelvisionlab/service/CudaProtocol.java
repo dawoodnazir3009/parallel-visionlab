@@ -84,13 +84,16 @@ public class CudaProtocol
         try(var out=new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))) 
         {
             out.writeInt(0x50564c31);
-            
+
             out.writeInt(image.width());
             out.writeInt(image.height());
             out.writeInt(operation);
-
-
-
+            int size=kernel==null?1:kernel.size();
+            out.writeInt(size);
+            for(int y=0;y<size;y++)
+                for(int x=0;x<size;x++)
+                   out.writeDouble(kernel==null?1:kernel.weightAt(x,y));
+       
 
 
 
