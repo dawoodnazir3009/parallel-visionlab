@@ -50,10 +50,12 @@ public Image load(Path path) throws IOException
         static void validateDimensions(int width,int height,long heapLimit)throws IOException 
         {
         long pixels=(long)width*height;
+
         long maximum=Math.min(64_000_000L,heapLimit/96);
         if(width<1||height<1||pixels>maximum)
             throw new IOException("Image dimensions "+width+" × "+height+
-                " exceed this JVM's safe processing limit of "+maximum+" pixels. Export a smaller JPEG/PNG or run with a larger Java heap.");
+                " exceed this JVM's safe processing limit of "+
+                maximum+" pixels. Export a smaller JPEG/PNG or run with a larger Java heap.");
     }
 }
 
