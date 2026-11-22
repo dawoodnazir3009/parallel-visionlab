@@ -28,7 +28,9 @@ public class CudaProtocol
         int size=kernel==null?1:kernel.size();
         out.writeInt(size);
         out.writeInt(reuseInput?1:0);
-        
+        for(int y=0;y<size;y++)
+            for(int x=0;x<size;x++)
+                out.writeDouble(kernel==null?1:kernel.weightAt(x,y));
 
 
 
