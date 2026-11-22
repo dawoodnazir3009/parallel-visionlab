@@ -65,7 +65,16 @@ public class CudaProtocol
         
         byte[] chunk=new byte[64*1024];
         
-        
+        for(int offset=0;offset<pixels.length;)
+        {
+            int count=Math.min(chunk.length/4,pixels.length-offset);
+            input.readFully(chunk,0,count*4);
+            ByteBuffer bytes=ByteBuffer.wrap(chunk,0,count*4);
+            for(int i=0;i<count;i++)
+                pixels[offset++]=bytes.getInt();
+        }
+        return new Result(new PixelImage(width,height,pixels),kernel,upload,download);
+    }
 
 
 
