@@ -11,5 +11,18 @@ public final class ImageValidation {
 
     private ImageValidation() 
     { 
-        
+
     }
+
+
+    public static Result compare(PixelImage expected, PixelImage actual, int tolerance) 
+    {
+        if (tolerance < 0 || tolerance > 255) 
+        { 
+            throw new IllegalArgumentException("Tolerance must be 0-255"); 
+        }
+
+        if (expected.width() != actual.width() || expected.height() != actual.height()) 
+        {
+            return new Result(false, -1, -1, Double.NaN);
+        }
