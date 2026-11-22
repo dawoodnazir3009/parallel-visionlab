@@ -25,6 +25,9 @@ public class CudaProtocol
      {
         if(operation<0||operation>2)throw new IllegalArgumentException("Unknown native operation");
         out.writeInt(WORKER_REQUEST);out.writeInt(image.width());out.writeInt(image.height());out.writeInt(operation);
+        int size=kernel==null?1:kernel.size();
+        out.writeInt(size);
+        out.writeInt(reuseInput?1:0);
         
 
 
