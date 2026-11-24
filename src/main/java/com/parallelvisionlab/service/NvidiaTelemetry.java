@@ -1,3 +1,4 @@
-public class NvidiaTelemetry {
+public class NvidiaTelemetry 
+{
     
 }
