@@ -7,5 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 public class NvidiaTelemetry 
 {
+    public record Snapshot(String name,double utilization,double usedMiB,double totalMiB,double watts,double temperature) { }
     
 }
